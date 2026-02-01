@@ -1,11 +1,11 @@
 /**
  * Admin panel – backend API (backend klasöründeki ESC4SDG.Api) ile iletişim.
- * Backend varsayılan: http://localhost:5137
+ * Backend varsayılan: http://localhost:5071
  */
 
 export const API_BASE = typeof window !== 'undefined'
-  ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5137')
-  : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5137';
+  ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5071')
+  : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5071';
 
 const TOKEN_KEY = 'esc4sdg_admin_token';
 
@@ -31,11 +31,11 @@ export type LoginResponse = {
   expiresAt: string;
 };
 
-export async function adminLogin(email: string, password: string): Promise<LoginResponse> {
-  const res = await fetch(`${API_BASE}/api/auth/login`, {
+export async function adminLogin(usernameOrEmail: string, password: string): Promise<LoginResponse> {
+  const res = await fetch(`${API_BASE}/api/admin/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ usernameOrEmail, password }),
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));

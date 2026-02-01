@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Menu, X, Globe, LogIn, UserPlus, ChevronDown, Gamepad2 } from 'lucide-react';
+import { Menu, X, Globe, LogIn, UserPlus, ChevronDown, Gamepad2, User, LogOut } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Link, usePathname } from '@/i18n/navigation';
+import { Link, usePathname, useRouter } from '@/i18n/navigation';
+import { getUserToken, getUserInfo, clearUserToken, AUTH_CHANGE_EVENT } from '@/lib/authApi';
 
 const LOCALES = [
   { code: 'tr' as const, name: 'Türkçe', short: 'TR' },
@@ -19,11 +20,22 @@ function getLocalizedPath(pathname: string, locale: string): string {
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const langRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
   const locale = useLocale() as 'tr' | 'en';
   const t = useTranslations('nav');
   const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    setIsLoggedIn(!!getUserToken());
+    const onAuthChange = () => setIsLoggedIn(!!getUserToken());
+    window.addEventListener(AUTH_CHANGE_EVENT, onAuthChange);
+    return () => window.removeEventListener(AUTH_CHANGE_EVENT, onAuthChange);
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -34,10 +46,19 @@ const Navbar = () => {
   useEffect(() => {
     const close = (e: MouseEvent) => {
       if (langRef.current && !langRef.current.contains(e.target as Node)) setLangOpen(false);
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
     };
     document.addEventListener('click', close);
     return () => document.removeEventListener('click', close);
   }, []);
+
+  const handleLogout = () => {
+    clearUserToken();
+    window.dispatchEvent(new CustomEvent(AUTH_CHANGE_EVENT));
+    setProfileOpen(false);
+    setMenuOpen(false);
+    router.push('/');
+  };
 
   const navLinks = [
     { href: '/', label: t('home') },
@@ -120,20 +141,79 @@ const Navbar = () => {
               )}
             </div>
 
-            <Link
-              href="/login"
-              className="hidden sm:flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-stone-700 hover:text-orange-600 rounded-xl border-2 border-stone-200 hover:border-amber-200 hover:bg-amber-50/80 bg-white/80 transition-all active:scale-[0.98]"
-            >
-              <LogIn className="w-4 h-4" />
-              {t('login')}
-            </Link>
-            <Link
-              href="/register"
-              className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-500 shadow-lg shadow-orange-400/30 hover:shadow-orange-400/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
-            >
-              <UserPlus className="w-4 h-4" />
-              {t('register')}
-            </Link>
+            {isLoggedIn ? (
+              <div className="hidden sm:block relative" ref={profileRef}>
+                <button
+                  type="button"
+                  onClick={() => setProfileOpen((o) => !o)}
+                  className="flex items-center gap-2 px-3.5 py-2.5 text-sm font-semibold text-stone-700 hover:text-orange-600 rounded-xl border-2 border-stone-200 hover:border-amber-200 hover:bg-amber-50/80 bg-white/80 transition-all active:scale-[0.98]"
+                  aria-expanded={profileOpen}
+                  aria-haspopup="true"
+                >
+                  <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center">
+                    <User className="w-4 h-4 text-teal-600" />
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-stone-400 transition-transform duration-200 ${profileOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {profileOpen && (() => {
+                  const userInfo = getUserInfo();
+                  return (
+                  <div className="absolute right-0 top-full mt-2 w-64 py-0 bg-white rounded-2xl shadow-xl shadow-stone-300/40 border-2 border-stone-100 ring-4 ring-amber-500/10 overflow-hidden">
+                    <div className="px-4 py-3 bg-stone-50/80 border-b border-stone-100">
+                      <p className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">{t('profile')}</p>
+                      <div className="space-y-1.5 text-sm text-stone-700">
+                        {userInfo?.displayName && (
+                          <p className="font-semibold text-stone-900 truncate" title={userInfo.displayName}>
+                            {userInfo.displayName}
+                          </p>
+                        )}
+                        {userInfo?.email && (
+                          <p className="truncate" title={userInfo.email}>
+                            {userInfo.email}
+                          </p>
+                        )}
+                        {userInfo?.username && (
+                          <p className="text-stone-600 truncate" title={userInfo.username}>
+                            @{userInfo.username}
+                          </p>
+                        )}
+                        {!userInfo?.email && !userInfo?.username && !userInfo?.displayName && (
+                          <p className="text-stone-500 italic">{t('profileNoInfo')}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="py-1.5">
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-stone-600 hover:bg-red-50 hover:text-red-700 rounded-xl mx-1 transition-colors text-left"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        {t('logout')}
+                      </button>
+                    </div>
+                  </div>
+                  );
+                })()}
+              </div>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="hidden sm:flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-stone-700 hover:text-orange-600 rounded-xl border-2 border-stone-200 hover:border-amber-200 hover:bg-amber-50/80 bg-white/80 transition-all active:scale-[0.98]"
+                >
+                  <LogIn className="w-4 h-4" />
+                  {t('login')}
+                </Link>
+                <Link
+                  href="/register"
+                  className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-500 shadow-lg shadow-orange-400/30 hover:shadow-orange-400/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  {t('register')}
+                </Link>
+              </>
+            )}
 
             <button
               type="button"
@@ -182,22 +262,35 @@ const Navbar = () => {
                 </div>
               </div>
               <div className="flex gap-3">
-                <Link
-                  href="/login"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-semibold text-stone-700 border-2 border-stone-200 rounded-xl hover:bg-amber-50 hover:border-amber-200 transition-colors"
-                >
-                  <LogIn className="w-4 h-4" />
-                  {t('login')}
-                </Link>
-                <Link
-                  href="/register"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-bold text-white rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 shadow-lg shadow-orange-400/30 hover:-translate-y-0.5 transition-all"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  {t('register')}
-                </Link>
+                {isLoggedIn ? (
+                  <button
+                    type="button"
+                    onClick={() => { handleLogout(); setMenuOpen(false); }}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-semibold text-stone-700 border-2 border-stone-200 rounded-xl hover:bg-red-50 hover:border-red-200 hover:text-red-700 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    {t('logout')}
+                  </button>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-semibold text-stone-700 border-2 border-stone-200 rounded-xl hover:bg-amber-50 hover:border-amber-200 transition-colors"
+                    >
+                      <LogIn className="w-4 h-4" />
+                      {t('login')}
+                    </Link>
+                    <Link
+                      href="/register"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-bold text-white rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 shadow-lg shadow-orange-400/30 hover:-translate-y-0.5 transition-all"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      {t('register')}
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>

@@ -2,8 +2,9 @@
 
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { Link } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { LogIn, Mail, Lock, ArrowRight } from 'lucide-react';
+import { API_BASE, loginUser, setUserToken, setUserInfo } from '@/lib/authApi';
 
 export default function LoginPage() {
   const t = useTranslations('auth');
@@ -11,14 +12,25 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const data = await loginUser(email, password);
+      setUserToken(data.token);
+      setUserInfo({ email: data.email ?? undefined, username: data.username ?? undefined });
+      router.push('/courses');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Login failed';
+      const isNetwork = msg === 'Failed to fetch' || msg.toLowerCase().includes('fetch');
+      setError(isNetwork ? `${t('connectionError')} (${API_BASE})` : msg);
+    } finally {
       setLoading(false);
-      // Demo: Backend/JWT bağlandığında buraya taşınacak
-    }, 600);
+    }
   };
 
   return (
@@ -64,6 +76,11 @@ export default function LoginPage() {
             </div>
 
             <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+              {error && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-100 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
               <div>
                 <label htmlFor="login-email" className="block text-sm font-medium text-stone-700 mb-1.5">
                   {t('email')}
@@ -72,7 +89,7 @@ export default function LoginPage() {
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400 pointer-events-none" />
                   <input
                     id="login-email"
-                    type="email"
+                    type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 text-stone-900 bg-stone-50/80 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-colors placeholder:text-stone-400"

@@ -2,31 +2,58 @@
 
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { Link } from '@/i18n/navigation';
-import { UserPlus, Mail, Lock, User, ArrowRight } from 'lucide-react';
+import { Link, useRouter } from '@/i18n/navigation';
+import { UserPlus, Mail, Lock, User, ArrowRight, AtSign, GraduationCap } from 'lucide-react';
+import { API_BASE, registerUser, setUserToken, setUserInfo } from '@/lib/authApi';
 
 export default function RegisterPage() {
   const t = useTranslations('auth');
   const nav = useTranslations('nav');
-  const [name, setName] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [gender, setGender] = useState('');
+  const [age, setAge] = useState<string>('');
+  const [school, setSchool] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     if (password !== confirmPassword) {
       setError(t('passwordMismatch'));
       return;
     }
+
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const data = await registerUser({
+        email,
+        username,
+        password,
+        displayName,
+        gender: gender || undefined,
+        age: age ? parseInt(age, 10) : undefined,
+        school: school || undefined,
+      });
+      setUserToken(data.token);
+      setUserInfo({
+        email: data.email ?? undefined,
+        username: data.username ?? undefined,
+        displayName: displayName || undefined,
+      });
+      router.push('/courses');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Register failed';
+      const isNetwork = msg === 'Failed to fetch' || msg.toLowerCase().includes('fetch');
+      setError(isNetwork ? `${t('connectionError')} (${API_BASE})` : msg);
+    } finally {
       setLoading(false);
-      // Demo: Backend bağlandığında buraya taşınacak
-    }, 600);
+    }
   };
 
   return (
@@ -78,19 +105,39 @@ export default function RegisterPage() {
                 </div>
               )}
               <div>
-                <label htmlFor="reg-name" className="block text-sm font-medium text-stone-700 mb-1.5">
-                  {t('name')}
+                <label htmlFor="reg-displayName" className="block text-sm font-medium text-stone-700 mb-1.5">
+                  {t('displayName')}
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400 pointer-events-none" />
                   <input
-                    id="reg-name"
+                    id="reg-displayName"
                     type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 text-stone-900 bg-stone-50/80 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-colors placeholder:text-stone-400"
-                    placeholder="Ad Soyad"
+                    placeholder={t('displayNamePlaceholder')}
                     required
+                  />
+                </div>
+              </div>
+              <div>
+                <label htmlFor="reg-username" className="block text-sm font-medium text-stone-700 mb-1.5">
+                  {t('username')}
+                </label>
+                <div className="relative">
+                  <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400 pointer-events-none" />
+                  <input
+                    id="reg-username"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 text-stone-900 bg-stone-50/80 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-colors placeholder:text-stone-400"
+                    placeholder={t('usernamePlaceholder')}
+                    minLength={4}
+                    required
+                    autoCapitalize="none"
+                    autoCorrect="off"
                   />
                 </div>
               </div>
@@ -112,6 +159,52 @@ export default function RegisterPage() {
                 </div>
               </div>
               <div>
+                <label htmlFor="reg-gender" className="block text-sm font-medium text-stone-700 mb-1.5">
+                  {t('gender')}
+                </label>
+                <select
+                  id="reg-gender"
+                  value={gender}
+                  onChange={(e) => setGender(e.target.value)}
+                  className="w-full px-4 py-3 text-stone-900 bg-stone-50/80 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-colors"
+                >
+                  <option value="">{t('genderPlaceholder')}</option>
+                  <option value="Male">{t('genderMale')}</option>
+                  <option value="Female">{t('genderFemale')}</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="reg-age" className="block text-sm font-medium text-stone-700 mb-1.5">
+                  {t('age')}
+                </label>
+                <input
+                  id="reg-age"
+                  type="number"
+                  min={1}
+                  max={120}
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  className="w-full px-4 py-3 text-stone-900 bg-stone-50/80 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-colors placeholder:text-stone-400"
+                  placeholder={t('agePlaceholder')}
+                />
+              </div>
+              <div>
+                <label htmlFor="reg-school" className="block text-sm font-medium text-stone-700 mb-1.5">
+                  {t('school')}
+                </label>
+                <div className="relative">
+                  <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400 pointer-events-none" />
+                  <input
+                    id="reg-school"
+                    type="text"
+                    value={school}
+                    onChange={(e) => setSchool(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 text-stone-900 bg-stone-50/80 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-colors placeholder:text-stone-400"
+                    placeholder={t('schoolPlaceholder')}
+                  />
+                </div>
+              </div>
+              <div>
                 <label htmlFor="reg-password" className="block text-sm font-medium text-stone-700 mb-1.5">
                   {t('password')}
                 </label>
@@ -125,6 +218,7 @@ export default function RegisterPage() {
                     className="w-full pl-10 pr-4 py-3 text-stone-900 bg-stone-50/80 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-colors placeholder:text-stone-400"
                     placeholder="••••••••"
                     required
+                    minLength={8}
                   />
                 </div>
               </div>
