@@ -1,6 +1,0 @@
-@ESC4SDG.Api_HostAddress = http://localhost:5137
-
-GET {{ESC4SDG.Api_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
