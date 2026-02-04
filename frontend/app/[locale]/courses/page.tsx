@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Clock,
   Star,
@@ -16,9 +16,16 @@ import {
 } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { courses as allCourses, type Locale } from '@/lib/mockCourses';
+import { courses as mockCourses, type Locale } from '@/lib/mockCourses';
+import { getCoursesList, type CourseListItem } from '@/lib/coursesApi';
+import { API_BASE } from '@/lib/authApi';
 import AnimateInView from '@/components/UI/AnimateInView';
 import studyCover from '@/images/study.jpg';
+
+function courseImageSrc(imageUrl: string | null | undefined) {
+  if (!imageUrl) return studyCover;
+  return imageUrl.startsWith('http') ? imageUrl : `${API_BASE}${imageUrl}`;
+}
 
 const CARD_THEMES = [
   { gradient: 'from-teal-500/80 to-emerald-600/90', accent: 'teal' },
@@ -26,12 +33,107 @@ const CARD_THEMES = [
   { gradient: 'from-violet-500/80 to-purple-600/90', accent: 'violet' },
 ];
 
+const CourseCardApi = ({
+  course,
+  locale,
+  themeIndex = 0,
+}: {
+  course: CourseListItem;
+  locale: string;
+  themeIndex?: number;
+}) => {
+  const t = useTranslations('courses');
+  const theme = CARD_THEMES[themeIndex % CARD_THEMES.length];
+  const title = course.title ?? course.slug;
+  const summary = course.summary ?? '';
+  const lessonCount = course.lessonCount ?? 0;
+  const accentClasses =
+    theme.accent === 'teal'
+      ? 'group-hover:border-teal-200 group-hover:shadow-teal-500/20'
+      : theme.accent === 'orange'
+        ? 'group-hover:border-orange-200 group-hover:shadow-orange-500/20'
+        : 'group-hover:border-violet-200 group-hover:shadow-violet-500/20';
+
+  return (
+    <Link href={`/courses/${course.slug}`} className="block h-full">
+      <div
+        className={`group relative overflow-hidden rounded-2xl bg-white shadow-xl shadow-stone-200/30 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 h-full flex flex-col border-2 border-stone-100/80 hover:border-2 ${accentClasses}`}
+      >
+        <div className="relative overflow-hidden h-48 flex-shrink-0">
+          <Image
+            src={courseImageSrc(course.imageUrl)}
+            alt=""
+            fill
+            className="object-cover group-hover:scale-110 transition-transform duration-700"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            unoptimized={!!course.imageUrl}
+          />
+          <div className={`absolute inset-0 bg-gradient-to-t ${theme.gradient} opacity-65`} />
+          <div className="absolute inset-0 bg-dots opacity-10" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-bl-[120px]" />
+          <div className="absolute top-3 left-3 px-3 py-1.5 rounded-lg text-xs font-bold bg-white/95 backdrop-blur-sm border border-white/50 shadow-lg">
+            {course.level ?? 'Beginner'}
+          </div>
+          <div className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/95 backdrop-blur-sm border border-white/50 shadow-lg">
+            <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+            <span className="text-sm font-bold text-stone-700">—</span>
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-stone-900/95 via-stone-900/85 to-stone-900/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-5">
+            <div className="translate-y-6 group-hover:translate-y-0 transition-transform duration-500">
+              <p className="text-xs font-bold text-white/70 uppercase tracking-wider mb-3">{t('featuresTitle')}</p>
+              <ul className="space-y-2">
+                <li className="flex items-center gap-2 text-white text-sm font-medium">
+                  <BookOpen className="w-4 h-4 text-teal-300 flex-shrink-0" />
+                  {t('featureLessons', { count: lessonCount })}
+                </li>
+                <li className="flex items-center gap-2 text-white text-sm font-medium">
+                  <Award className="w-4 h-4 text-amber-300 flex-shrink-0" />
+                  {t('featureCertificate')}
+                </li>
+                <li className="flex items-center gap-2 text-white text-sm font-medium">
+                  <Clock className="w-4 h-4 text-teal-300 flex-shrink-0" />
+                  {course.durationMinutes} dakika
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 flex flex-col p-6">
+          <span className="inline-block px-2.5 py-1 rounded-lg bg-stone-100 text-stone-600 text-xs font-semibold mb-3 w-fit">
+            {course.category ?? 'Education'}
+          </span>
+          <h3 className="text-lg font-bold text-stone-900 line-clamp-2 group-hover:text-teal-700 transition-colors leading-tight mb-2">
+            {title}
+          </h3>
+          <p className="text-sm text-stone-500 line-clamp-2 mb-4 font-medium">{summary}</p>
+          <div className="flex items-center gap-2 text-sm text-stone-500 mb-5 flex-wrap">
+            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-stone-100 text-stone-600">
+              <Clock className="w-4 h-4" />
+              {course.durationMinutes} dk
+            </span>
+            <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-stone-100 text-stone-600">
+              <Layers className="w-3.5 h-3.5" />
+              {lessonCount} ders
+            </span>
+          </div>
+          <div className="mt-auto">
+            <span className="inline-flex items-center gap-2 px-4 py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-lg shadow-teal-500/25 transition-all group-hover:scale-[1.03] group-hover:shadow-teal-500/35">
+              {t('viewDetails')}
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </span>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+};
+
 const CourseCard = ({
   course,
   locale,
   themeIndex = 0,
 }: {
-  course: (typeof allCourses)[number];
+  course: (typeof mockCourses)[number];
   locale: string;
   themeIndex?: number;
 }) => {
@@ -145,28 +247,45 @@ const CourseCard = ({
 export default function CoursesPage() {
   const t = useTranslations('courses');
   const locale = useLocale();
+  const [apiCourses, setApiCourses] = useState<CourseListItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedLevel, setSelectedLevel] = useState('All');
   const [selectedLanguage, setSelectedLanguage] = useState<'All' | Locale>('All');
   const [showFilters, setShowFilters] = useState(false);
 
-  const categories = Array.from(new Set(allCourses.map((c) => c.category))).sort();
+  useEffect(() => {
+    getCoursesList(locale).then(setApiCourses);
+  }, [locale]);
+
+  const categories = Array.from(
+    new Set([...(apiCourses.map((c) => c.category).filter(Boolean) as string[]), ...mockCourses.map((c) => c.category)])
+  ).sort();
   const levels = ['Beginner', 'Intermediate', 'Advanced'] as const;
   const languages = ['tr', 'en'] as const;
 
-  const filteredCourses = allCourses.filter((course) => {
-    const title = course.title[locale as 'tr' | 'en'] ?? course.title.tr;
+  const allCoursesFromApi = apiCourses.map((c) => ({ ...c, _fromApi: true as const }));
+  const allCoursesFromMock = mockCourses.map((c) => ({ ...c, _fromApi: false as const }));
+  const combinedForFilter = [
+    ...allCoursesFromApi,
+    ...allCoursesFromMock.filter((mc) => !apiCourses.some((ac) => ac.slug === mc.slug)),
+  ];
+
+  const filteredCourses = combinedForFilter.filter((course) => {
+    const title = '_fromApi' in course && course._fromApi
+      ? (course as CourseListItem & { _fromApi: true }).title ?? (course as CourseListItem).slug
+      : (course as (typeof mockCourses)[number]).title[locale as 'tr' | 'en'] ?? (course as (typeof mockCourses)[number]).title.tr;
+    const titleStr = typeof title === 'string' ? title : '';
     const matchesSearch =
-      title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      course.instructor.toLowerCase().includes(searchTerm.toLowerCase());
+      titleStr.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ('instructorName' in course && (course as CourseListItem).instructorName?.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const matchesCategory = selectedCategory === 'All' || course.category === selectedCategory;
-    const matchesLevel = selectedLevel === 'All' || course.level === selectedLevel;
-    const matchesLanguage =
-      selectedLanguage === 'All' || course.language.includes(selectedLanguage);
-
-    return matchesSearch && matchesCategory && matchesLevel && matchesLanguage;
+    const cat = '_fromApi' in course && course._fromApi ? (course as CourseListItem).category : (course as (typeof mockCourses)[number]).category;
+    const matchesCategory = selectedCategory === 'All' || cat === selectedCategory;
+    const lvl = '_fromApi' in course && course._fromApi ? (course as CourseListItem).level : (course as (typeof mockCourses)[number]).level;
+    const matchesLevel = selectedLevel === 'All' || lvl === selectedLevel;
+    const langOk = selectedLanguage === 'All' || locale === selectedLanguage;
+    return matchesSearch && matchesCategory && matchesLevel && langOk;
   });
 
   return (
@@ -294,8 +413,12 @@ export default function CoursesPage() {
           {filteredCourses.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredCourses.map((course, i) => (
-                <AnimateInView key={course.slug} animation="fade-up" delay={Math.min(i * 80, 400)}>
-                  <CourseCard course={course} locale={locale} themeIndex={i} />
+                <AnimateInView key={'_fromApi' in course && course._fromApi ? (course as CourseListItem).id : (course as (typeof mockCourses)[number]).slug} animation="fade-up" delay={Math.min(i * 80, 400)}>
+                  {'_fromApi' in course && course._fromApi ? (
+                    <CourseCardApi course={course as CourseListItem} locale={locale} themeIndex={i} />
+                  ) : (
+                    <CourseCard course={course as (typeof mockCourses)[number]} locale={locale} themeIndex={i} />
+                  )}
                 </AnimateInView>
               ))}
             </div>

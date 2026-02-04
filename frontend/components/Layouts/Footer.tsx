@@ -3,8 +3,12 @@
 import { Mail, Phone, MapPin } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
+import { SocialLinks } from '@/components/UI/SocialLinks';
+import type { SocialLinkItem } from '@/lib/publicApi';
 
-const Footer = () => {
+type FooterProps = { socialLinks?: SocialLinkItem[] };
+
+const Footer = ({ socialLinks = [] }: FooterProps) => {
   const t = useTranslations('footer');
   const currentYear = new Date().getFullYear();
 
@@ -22,7 +26,7 @@ const Footer = () => {
       
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-16">
-          {/* Brand & Tagline */}
+          {/* Brand, Tagline & Sosyal Medya */}
           <div className="lg:col-span-1">
             <Link href="/" className="inline-flex items-center gap-2.5 mb-5">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-teal-500/25">
@@ -30,9 +34,10 @@ const Footer = () => {
               </div>
               <span className="text-xl font-black text-white tracking-tight">Escape4SDG</span>
             </Link>
-            <p className="text-stone-400 text-sm leading-relaxed max-w-xs">
+            <p className="text-stone-400 text-sm leading-relaxed max-w-xs mb-6">
               {t('tagline')}
             </p>
+            <SocialLinks variant="footer" initialLinks={socialLinks} />
           </div>
 
           {/* Quick Links */}
@@ -54,7 +59,7 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* İletişim - Contact section from image */}
+          {/* İletişim - Contact section */}
           <div className="lg:col-span-2">
             <h3 className="font-bold text-white text-sm uppercase tracking-wider mb-5">
               {t('contact')}

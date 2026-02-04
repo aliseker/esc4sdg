@@ -9,6 +9,8 @@
     "register": "Kayıt Ol",
     "logout": "Çıkış Yap",
     "profile": "Profil bilgileri",
+    "myCourses": "Kurslarım",
+    "myCertificates": "Sertifikalarım",
     "profileNoInfo": "Bilgi yok",
     "language": "Dil"
   },
@@ -106,7 +108,9 @@
     "hubCardTitle": "Platform Merkezi",
     "hubCardDesc": "Kurslar, sertifikalar ve sınıf aktiviteleriyle kapsamlı kaynak merkezi",
     "cta": "Kurslara Başla",
-    "back": "Ana Sayfa"
+    "back": "Ana Sayfa",
+    "socialTitle": "Sosyal Medya",
+    "socialHeading": "Bizi takip edin"
   },
   "projects": {
     "badge": "Projeler",
@@ -159,6 +163,7 @@
     "partners": "Ortaklar",
     "contact": "İletişim",
     "links": "Bağlantılar",
+    "social": "Sosyal Medya",
     "tagline": "Ekip ruhu ve sürdürülebilir kalkınma hedefleri. MOOC'lar, escape tarzı etkinlikler ve sertifikalarla öğrenin.",
     "address": "Tahılpazarı Mahallesi, 477 sk. Yerebakan İş Merkezi, No-302",
     "city": "Muratpaşa, Antalya / Türkiye",

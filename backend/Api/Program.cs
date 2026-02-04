@@ -66,6 +66,7 @@ if (app.Environment.IsDevelopment())
         .AllowAnyMethod());
 }
 
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -92,6 +93,7 @@ app.MapGet("/weatherforecast", [Authorize] () =>
 
 await ApplyMigrationsAsync(app);
 await EnsureRolesAsync(app);
+await EnsureLanguagesAsync(app);
 
 await app.RunAsync();
 
@@ -110,6 +112,17 @@ static async Task EnsureRolesAsync(WebApplication app)
         return;
     dbContext.Roles.Add(new Role { Name = RoleNames.Admin });
     dbContext.Roles.Add(new Role { Name = RoleNames.User });
+    await dbContext.SaveChangesAsync();
+}
+
+static async Task EnsureLanguagesAsync(WebApplication app)
+{
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    if (await dbContext.Languages.AnyAsync())
+        return;
+    dbContext.Languages.Add(new Language { Code = "tr", Name = "Türkçe", SortOrder = 0 });
+    dbContext.Languages.Add(new Language { Code = "en", Name = "English", SortOrder = 1 });
     await dbContext.SaveChangesAsync();
 }
 

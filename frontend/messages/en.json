@@ -9,6 +9,8 @@
     "register": "Create account",
     "logout": "Sign out",
     "profile": "Profile",
+    "myCourses": "My Courses",
+    "myCertificates": "My Certificates",
     "profileNoInfo": "No info",
     "language": "Language"
   },
@@ -106,7 +108,9 @@
     "hubCardTitle": "Platform Hub",
     "hubCardDesc": "Comprehensive resource centre with courses, certificates and classroom activities",
     "cta": "Start Learning",
-    "back": "Home"
+    "back": "Home",
+    "socialTitle": "Social Media",
+    "socialHeading": "Follow us"
   },
   "projects": {
     "badge": "Projects",
@@ -159,6 +163,7 @@
     "partners": "Partners",
     "contact": "Contact",
     "links": "Links",
+    "social": "Social Media",
     "tagline": "Team spirit and sustainable development goals. Learn with MOOCs, escape-style activities and certificates.",
     "address": "Tahılpazarı Mahallesi, 477 sk. Yerebakan İş Merkezi, No-302",
     "city": "Muratpaşa, Antalya / Türkiye",

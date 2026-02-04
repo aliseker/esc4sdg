@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Link, useRouter } from '@/i18n/navigation';
 import { LogIn, Mail, Lock, ArrowRight } from 'lucide-react';
 import { API_BASE, loginUser, setUserToken, setUserInfo } from '@/lib/authApi';
@@ -9,6 +10,8 @@ import { API_BASE, loginUser, setUserToken, setUserInfo } from '@/lib/authApi';
 export default function LoginPage() {
   const t = useTranslations('auth');
   const nav = useTranslations('nav');
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,7 +26,8 @@ export default function LoginPage() {
       const data = await loginUser(email, password);
       setUserToken(data.token);
       setUserInfo({ email: data.email ?? undefined, username: data.username ?? undefined });
-      router.push('/courses');
+      const target = returnUrl && returnUrl.startsWith('/') ? returnUrl : '/courses';
+      router.push(target);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Login failed';
       const isNetwork = msg === 'Failed to fetch' || msg.toLowerCase().includes('fetch');

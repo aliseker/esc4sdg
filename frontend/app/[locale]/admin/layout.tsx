@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import Link from 'next/link';
-import { Shield, LayoutDashboard, LogOut, Menu, X } from 'lucide-react';
+import { Shield, LayoutDashboard, LogOut, Menu, X, Users, Share2, Languages, BookOpen } from 'lucide-react';
 import { getStoredToken, clearStoredToken, adminMe } from '@/lib/adminApi';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -39,6 +39,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     router.replace('/admin/login');
   };
 
+  const navItems: { href: string; label: string; icon: typeof LayoutDashboard }[] = [
+    { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/admin/partners', label: 'Ortaklar', icon: Users },
+    { href: '/admin/social', label: 'Sosyal Medya', icon: Share2 },
+    { href: '/admin/languages', label: 'Diller', icon: Languages },
+    { href: '/admin/courses', label: 'Kurslar', icon: BookOpen },
+  ];
+
+  const isActive = (href: string) => {
+    if (href === '/admin') return pathname === '/admin' || pathname?.endsWith('/admin');
+    return pathname?.includes(href);
+  };
+
   if (isLoginPage) return <>{children}</>;
 
   if (!mounted || !user) {
@@ -71,17 +84,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </button>
         </div>
         <nav className="p-4 space-y-1 flex-1">
-          <Link
-            href="/admin"
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${
-              pathname === '/admin' || pathname?.endsWith('/admin')
-                ? 'bg-amber-100 text-amber-900'
-                : 'text-stone-600 hover:bg-stone-100'
-            }`}
-          >
-            <LayoutDashboard className="w-5 h-5" />
-            Dashboard
-          </Link>
+          {navItems.map(({ href, label, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${
+                isActive(href) ? 'bg-amber-100 text-amber-900' : 'text-stone-600 hover:bg-stone-100'
+              }`}
+            >
+              <Icon className="w-5 h-5" />
+              {label}
+            </Link>
+          ))}
         </nav>
         <div className="p-4 border-t border-stone-100">
           <p className="text-xs text-stone-500 truncate px-2 mb-2">{user.email}</p>
@@ -98,7 +112,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-stone-200 px-4 lg:px-8 py-4 flex items-center gap-4">
+        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-stone-200 px-4 lg:px-8 py-3 flex items-center gap-4 flex-wrap">
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}
@@ -106,7 +120,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           >
             <Menu className="w-5 h-5" />
           </button>
-          <h1 className="text-lg font-semibold text-stone-800">Admin Panel</h1>
+          <Link href="/admin" className="flex items-center gap-2 shrink-0">
+            <Shield className="w-5 h-5 text-amber-600" />
+            <h1 className="text-lg font-semibold text-stone-800">Admin Panel</h1>
+          </Link>
+          <nav className="hidden md:flex items-center gap-1 flex-1 min-w-0">
+            {navItems.map(({ href, label, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                  isActive(href)
+                    ? 'bg-amber-100 text-amber-900'
+                    : 'text-stone-600 hover:bg-stone-100'
+                }`}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                {label}
+              </Link>
+            ))}
+          </nav>
         </header>
         <main className="flex-1 p-4 lg:p-8">{children}</main>
       </div>

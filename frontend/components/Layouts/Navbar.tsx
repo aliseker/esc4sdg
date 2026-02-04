@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Menu, X, Globe, LogIn, UserPlus, ChevronDown, Gamepad2, User, LogOut } from 'lucide-react';
+import { Menu, X, Globe, LogIn, UserPlus, ChevronDown, Gamepad2, User, LogOut, Award, BookOpen } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { getUserToken, getUserInfo, clearUserToken, AUTH_CHANGE_EVENT } from '@/lib/authApi';
@@ -75,6 +75,10 @@ const Navbar = () => {
     const url = getLocalizedPath(pathname || '/', newLocale);
     window.location.href = url;
   };
+
+  // Admin panelinde kullanıcı navbar'ı (Giriş Yap, Kayıt Ol) gösterme; admin kendi header/sidebar'ına sahip
+  const isAdmin = typeof pathname === 'string' && pathname.includes('/admin');
+  if (isAdmin) return null;
 
   return (
     <header
@@ -183,6 +187,22 @@ const Navbar = () => {
                       </div>
                     </div>
                     <div className="py-1.5">
+                      <Link
+                        href="/my-courses"
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-stone-600 hover:bg-stone-50 rounded-xl mx-1 transition-colors text-left"
+                        onClick={() => setProfileOpen(false)}
+                      >
+                        <BookOpen className="w-4 h-4" />
+                        {t('myCourses')}
+                      </Link>
+                      <Link
+                        href="/certificates"
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-stone-600 hover:bg-stone-50 rounded-xl mx-1 transition-colors text-left"
+                        onClick={() => setProfileOpen(false)}
+                      >
+                        <Award className="w-4 h-4" />
+                        {t('myCertificates')}
+                      </Link>
                       <button
                         type="button"
                         onClick={handleLogout}

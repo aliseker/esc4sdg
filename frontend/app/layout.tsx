@@ -5,6 +5,7 @@ import Navbar from "@/components/Layouts/Navbar";
 import Footer from "@/components/Layouts/Footer";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
+import { getSocialLinks } from "@/lib/publicApi";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -17,6 +18,8 @@ export const metadata: Metadata = {
   description: "Escape room tarzı etkinlikler, MOOC'lar ve sertifikalarla SDG'leri keşfedin.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -24,6 +27,12 @@ export default async function RootLayout({
 }>) {
   const locale = await getLocale();
   const messages = await getMessages();
+  let socialLinks: Awaited<ReturnType<typeof getSocialLinks>> = [];
+  try {
+    socialLinks = await getSocialLinks();
+  } catch {
+    // API erişilemezse boş liste; site yine de açılır
+  }
 
   return (
     <html lang={locale}>
@@ -32,7 +41,7 @@ export default async function RootLayout({
         <NextIntlClientProvider messages={messages}>
           <Navbar />
           <main className="min-h-screen">{children}</main>
-          <Footer />
+          <Footer socialLinks={socialLinks} />
         </NextIntlClientProvider>
       </body>
     </html>

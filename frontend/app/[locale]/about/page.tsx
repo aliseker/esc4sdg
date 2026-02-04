@@ -11,9 +11,12 @@ import {
   Globe,
   Gamepad2,
   Trophy,
-  Rocket
+  Rocket,
+  Share2
 } from 'lucide-react';
 import AnimateInView from '@/components/UI/AnimateInView';
+import { SocialLinks } from '@/components/UI/SocialLinks';
+import { getSocialLinks } from '@/lib/publicApi';
 
 export async function generateMetadata() {
   const t = await getTranslations('about');
@@ -25,6 +28,7 @@ export async function generateMetadata() {
 
 export default async function AboutPage() {
   const t = await getTranslations('about');
+  const socialLinks = await getSocialLinks();
 
   const objectives = [
     t('objectives.0'),
@@ -295,6 +299,26 @@ export default async function AboutPage() {
               );
             })}
           </div>
+        </div>
+      </section>
+
+      {/* Sosyal Medya - panelden eklenen linkler */}
+      <section className="relative py-16 lg:py-20 bg-white border-t border-stone-100">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimateInView animation="fade-up" delay={0}>
+            <div className="text-center mb-10">
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-100 text-teal-700 text-sm font-bold mb-4">
+                <Share2 className="w-4 h-4" />
+                {t('socialTitle')}
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-bold text-stone-900">
+                {t('socialHeading')}
+              </h2>
+            </div>
+          </AnimateInView>
+          <AnimateInView animation="fade-up" delay={100}>
+            <SocialLinks variant="about" initialLinks={socialLinks} />
+          </AnimateInView>
         </div>
       </section>
     </div>
