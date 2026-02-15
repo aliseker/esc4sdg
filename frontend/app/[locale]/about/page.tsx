@@ -1,22 +1,28 @@
-import { getTranslations } from 'next-intl/server';
-import { 
-  ArrowRight, 
-  Target, 
-  Award, 
-  Sparkles, 
-  BookOpen, 
-  Puzzle, 
+import { getTranslations, getLocale } from 'next-intl/server';
+import {
+  ArrowRight,
+  Target,
+  Award,
+  Sparkles,
+  BookOpen,
+  Puzzle,
   Zap,
   Users,
   Globe,
   Gamepad2,
   Trophy,
   Rocket,
-  Share2
+  Share2,
+  HelpCircle,
+  UserPlus,
+  BookOpenCheck,
+  ClipboardCheck,
+  GraduationCap
 } from 'lucide-react';
 import AnimateInView from '@/components/UI/AnimateInView';
 import { SocialLinks } from '@/components/UI/SocialLinks';
-import { getSocialLinks } from '@/lib/publicApi';
+import { getSocialLinks, getPartners, getLanguages } from '@/lib/publicApi';
+import { getCoursesList } from '@/lib/coursesApi';
 
 export async function generateMetadata() {
   const t = await getTranslations('about');
@@ -28,7 +34,13 @@ export async function generateMetadata() {
 
 export default async function AboutPage() {
   const t = await getTranslations('about');
-  const socialLinks = await getSocialLinks();
+  const locale = (await getLocale()) ?? 'tr';
+  const [socialLinks, courses, partners, languages] = await Promise.all([
+    getSocialLinks(),
+    getCoursesList(locale).catch(() => []),
+    getPartners(locale).catch(() => []),
+    getLanguages().catch(() => []),
+  ]);
 
   const objectives = [
     t('objectives.0'),
@@ -45,10 +57,10 @@ export default async function AboutPage() {
   ];
 
   const stats = [
-    { value: '6', label: 'MOOC Modülü', icon: BookOpen, color: 'from-teal-500 to-emerald-500' },
-    { value: '7', label: 'Ortak Kuruluş', icon: Users, color: 'from-orange-500 to-amber-500' },
-    { value: '6', label: 'Dil Desteği', icon: Globe, color: 'from-violet-500 to-purple-500' },
-    { value: '∞', label: 'Öğrenme Fırsatı', icon: Rocket, color: 'from-pink-500 to-rose-500' },
+    { value: String(courses.length), label: t('stats.moocModules'), icon: BookOpen, color: 'from-teal-500 to-emerald-500' },
+    { value: String(partners.length), label: t('stats.partners'), icon: Users, color: 'from-orange-500 to-amber-500' },
+    { value: String(languages.length), label: t('stats.languages'), icon: Globe, color: 'from-violet-500 to-purple-500' },
+    { value: '∞', label: t('stats.learningOpportunity'), icon: Rocket, color: 'from-pink-500 to-rose-500' },
   ];
 
   const cards = [
@@ -176,10 +188,10 @@ export default async function AboutPage() {
             <div className="text-center mb-16">
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-100 text-teal-700 text-sm font-bold mb-4">
                 <Target className="w-4 h-4" />
-                Misyon & Vizyon
+                {t('missionVisionBadge')}
               </span>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-stone-900">
-                Neler Yapıyoruz?
+                {t('whatWeDoTitle')}
               </h2>
             </div>
           </AnimateInView>
@@ -246,6 +258,52 @@ export default async function AboutPage() {
         </div>
       </section>
 
+      {/* Nasıl çalışır? - How it works */}
+      <section id="how-it-works" className="relative py-20 lg:py-28 scroll-mt-24">
+        <div className="absolute inset-0 bg-dots opacity-20" />
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimateInView animation="fade-up" delay={0}>
+            <div className="text-center mb-16">
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-100 text-amber-800 text-sm font-bold mb-4">
+                <HelpCircle className="w-4 h-4" />
+                {t('howItWorksTitle')}
+              </span>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-stone-900 mb-4">
+                {t('howItWorksTitle')}
+              </h2>
+              <p className="text-stone-500 text-lg max-w-2xl mx-auto">
+                {t('howItWorksSubtitle')}
+              </p>
+            </div>
+          </AnimateInView>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { icon: UserPlus, title: t('howItWorksStep1Title'), desc: t('howItWorksStep1Desc'), step: '1' },
+              { icon: BookOpenCheck, title: t('howItWorksStep2Title'), desc: t('howItWorksStep2Desc'), step: '2' },
+              { icon: ClipboardCheck, title: t('howItWorksStep3Title'), desc: t('howItWorksStep3Desc'), step: '3' },
+              { icon: GraduationCap, title: t('howItWorksStep4Title'), desc: t('howItWorksStep4Desc'), step: '4' },
+            ].map((item, i) => {
+              const Icon = item.icon;
+              return (
+                <AnimateInView key={i} animation="fade-up" delay={i * 100}>
+                  <div className="relative rounded-2xl bg-white border-2 border-stone-100 p-6 shadow-lg shadow-stone-200/30 hover:shadow-xl hover:border-amber-200 transition-all h-full flex flex-col">
+                    <div className="absolute top-4 right-4 w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-lg font-black">
+                      {item.step}
+                    </div>
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center mb-4 shadow-lg shadow-amber-500/30">
+                      <Icon className="w-7 h-7 text-white" />
+                    </div>
+                    <h3 className="text-lg font-bold text-stone-900 mb-2">{item.title}</h3>
+                    <p className="text-stone-600 text-sm leading-relaxed">{item.desc}</p>
+                  </div>
+                </AnimateInView>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       {/* Best Results Cards - Interactive */}
       <section className="relative py-20 lg:py-28 bg-gradient-to-b from-stone-100 via-amber-50/50 to-stone-50">
         <div className="absolute inset-0 bg-grid opacity-20" />
@@ -255,13 +313,13 @@ export default async function AboutPage() {
             <div className="text-center mb-16">
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-100 text-violet-700 text-sm font-bold mb-4">
                 <Sparkles className="w-4 h-4" />
-                Projemizin Çıktıları
+                {t('outputsBadge')}
               </span>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-stone-900 mb-4">
                 {t('bestResultsTitle')}
               </h2>
               <p className="text-stone-500 text-lg max-w-2xl mx-auto">
-                Öğretmenler ve eğitimciler için tasarlanmış kapsamlı kaynaklar
+                {t('outputsSubtitle')}
               </p>
             </div>
           </AnimateInView>

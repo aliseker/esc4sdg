@@ -27,6 +27,10 @@ public class Partner
     [MaxLength(500)]
     public string? LogoUrl { get; set; }
 
+    /// <summary>Logo focus in circle: center, top, bottom, left, right or "x% y%" (CSS object-position).</summary>
+    [MaxLength(20)]
+    public string? LogoPosition { get; set; }
+
     [MaxLength(80)]
     public string? Role { get; set; }
 

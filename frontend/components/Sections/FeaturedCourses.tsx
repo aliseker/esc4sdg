@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { Clock, Star, ArrowRight, BookOpen, Sparkles, PlayCircle } from 'lucide-react';
+import { Clock, Star, ArrowRight, BookOpen, Sparkles } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { courses as mockCourses } from '@/lib/mockCourses';
 import { getCoursesList, type CourseListItem } from '@/lib/coursesApi';
 import { API_BASE } from '@/lib/authApi';
 import AnimateInView from '@/components/UI/AnimateInView';
-import studyCover from '@/images/study.jpg';
+import studyCover from '@/public/images/study.jpg';
 
 type FeaturedCourseItem = {
   slug: string;
@@ -51,10 +51,6 @@ const FeaturedCourseCard = ({
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_0%_50%,rgba(255,255,255,0.15),transparent)]" />
           <div className="absolute top-6 right-6 w-20 h-20 rounded-full border-2 border-white/20" />
           <div className="absolute top-12 right-12 w-12 h-12 rounded-full border-2 border-white/15" />
-          <div className="absolute bottom-6 left-6 flex items-center gap-2 px-4 py-2 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30">
-            <PlayCircle className="w-5 h-5 text-white" />
-            <span className="text-sm font-bold text-white">{locale === 'tr' ? 'Başla' : 'Start'}</span>
-          </div>
         </div>
         <div className="flex-1 p-8 sm:p-10 flex flex-col justify-center relative">
           <div className="absolute top-6 right-6 px-3 py-1 rounded-full bg-amber-400/90 text-stone-900 text-xs font-bold">
@@ -79,7 +75,7 @@ const FeaturedCourseCard = ({
             </span>
           </div>
           <span className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white text-teal-700 font-bold text-sm w-fit group-hover:bg-amber-100 group-hover:text-teal-800 transition-colors shadow-lg">
-            {locale === 'tr' ? 'Kursa Git' : 'Go to course'}
+            {locale === 'tr' ? 'Kursa başla' : 'Start course'}
             <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
           </span>
         </div>
@@ -177,6 +173,7 @@ function mockToFeaturedItem(c: (typeof mockCourses)[number], locale: 'tr' | 'en'
 const FeaturedCourses = () => {
   const locale = useLocale() as 'tr' | 'en';
   const t = useTranslations('nav');
+  const tCourses = useTranslations('courses');
   const [apiCourses, setApiCourses] = useState<CourseListItem[]>([]);
 
   useEffect(() => {
@@ -201,19 +198,13 @@ const FeaturedCourses = () => {
         <AnimateInView animation="fade-up" className="text-center mb-10">
           <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-100 text-teal-700 text-sm font-bold mb-6">
             <BookOpen className="w-4 h-4" />
-            {locale === 'tr' ? 'Popüler Kurslar' : 'Popular courses'}
+            {tCourses('popularBadge')}
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-stone-900 mb-4 tracking-tight">
-            {locale === 'tr' ? (
-              <>Öne çıkan <span className="bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">kurslar</span></>
-            ) : (
-              <>Featured <span className="bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">courses</span></>
-            )}
+            {tCourses('sectionHeadingPrefix')} <span className="bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">{tCourses('sectionHeadingHighlight')}</span>
           </h2>
           <p className="text-lg text-stone-600 max-w-2xl mx-auto font-medium">
-            {locale === 'tr'
-              ? 'Ekip ruhu ve SDG odaklı MOOC içerikleri.'
-              : 'Team spirit and SDG-focused MOOC content.'}
+            {tCourses('sectionSubtitle')}
           </p>
         </AnimateInView>
 

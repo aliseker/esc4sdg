@@ -6,6 +6,7 @@ import {
   adminLanguagesGetAll,
   adminCourseCreate,
   adminUploadCourseCover,
+  adminUploadCourseMaterial,
   API_BASE,
   type Language,
   type AdminCoursePayload,
@@ -13,6 +14,8 @@ import {
 import Link from 'next/link';
 import { ArrowLeft, Video, FileText, HelpCircle, FileUp, Plus, Trash2, ImagePlus } from 'lucide-react';
 import { QuizEditor } from '@/components/Admin/QuizEditor';
+import { VideoDurationFetcher } from '@/components/Admin/VideoDurationFetcher';
+import { RichTextEditor } from '@/components/Admin/RichTextEditor';
 
 const ITEM_TYPES = ['Video', 'Pdf', 'Text', 'Quiz'] as const;
 type ItemType = (typeof ITEM_TYPES)[number];
@@ -60,25 +63,36 @@ export default function AdminCourseNewPage() {
   const [error, setError] = useState('');
   const [slug, setSlug] = useState('');
   const [category, setCategory] = useState('');
-  const [level, setLevel] = useState('');
+  const LEVEL_OPTIONS = ['Beginner', 'Intermediate', 'Advanced'] as const;
+  const [level, setLevel] = useState<string>('Beginner');
   const [imageUrl, setImageUrl] = useState('');
   const [coverUploading, setCoverUploading] = useState(false);
   const [activeLangId, setActiveLangId] = useState<number | null>(null);
-  const [courseTranslations, setCourseTranslations] = useState<{ languageId: number; title: string; summary: string }[]>([]);
+  const [courseTranslations, setCourseTranslations] = useState<{ languageId: number; title: string; summary: string; category: string; level: string }[]>([]);
   const [modules, setModules] = useState<ModuleForm[]>([]);
   const [addItemModuleIdx, setAddItemModuleIdx] = useState<number | null>(null);
+  const [uploadingItem, setUploadingItem] = useState<{ modIdx: number; itemIdx: number } | null>(null);
 
   useEffect(() => {
     adminLanguagesGetAll()
       .then((langs) => {
         setLanguages(langs);
-        setCourseTranslations(langs.map((l) => ({ languageId: l.id, title: '', summary: '' })));
+        setCourseTranslations(langs.map((l) => ({ languageId: l.id, title: '', summary: '', category: '', level: 'Beginner' })));
         setModules([defaultModuleForm(langs)]);
         if (langs.length > 0) setActiveLangId(langs[0].id);
       })
       .catch(() => setError('Diller yüklenemedi'))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (activeLangId == null || courseTranslations.length === 0) return;
+    const t = courseTranslations.find((x) => x.languageId === activeLangId);
+    if (t) {
+      setCategory(t.category);
+      setLevel(t.level);
+    }
+  }, [activeLangId, courseTranslations]);
 
   const addModule = () => {
     setModules((m) => [...m, defaultModuleForm(languages)]);
@@ -89,9 +103,9 @@ export default function AdminCourseNewPage() {
       m.map((mo, i) =>
         i === modIdx
           ? {
-              ...mo,
-              items: [...mo.items, { ...defaultItemForType(type, languages), sortOrder: mo.items.length }],
-            }
+            ...mo,
+            items: [...mo.items, { ...defaultItemForType(type, languages), sortOrder: mo.items.length }],
+          }
           : mo
       )
     );
@@ -113,13 +127,13 @@ export default function AdminCourseNewPage() {
       m.map((mo, mi) =>
         mi === modIdx
           ? {
-              ...mo,
-              items: mo.items.map((it, ii) =>
-                ii === itemIdx
-                  ? { ...it, translations: it.translations.map((t, ti) => (ti === tri ? { ...t, title: value } : t)) }
-                  : it
-              ),
-            }
+            ...mo,
+            items: mo.items.map((it, ii) =>
+              ii === itemIdx
+                ? { ...it, translations: it.translations.map((t, ti) => (ti === tri ? { ...t, title: value } : t)) }
+                : it
+            ),
+          }
           : mo
       )
     );
@@ -142,7 +156,13 @@ export default function AdminCourseNewPage() {
     durationMinutes: 0,
     imageUrl: imageUrl.trim() || undefined,
     hasCertificate: true,
-    translations: courseTranslations.map((t) => ({ languageId: t.languageId, title: t.title, summary: t.summary })),
+    translations: courseTranslations.map((t) => ({
+      languageId: t.languageId,
+      title: t.title,
+      summary: t.summary,
+      category: t.category?.trim() || undefined,
+      level: t.level?.trim() || undefined,
+    })),
     modules: modules.map((mod, i) => ({
       sortOrder: i,
       translations: mod.translations.map((t) => ({ languageId: t.languageId, title: t.title, description: t.description })),
@@ -166,8 +186,8 @@ export default function AdminCourseNewPage() {
     setError('');
     setSaving(true);
     try {
-      const { id } = await adminCourseCreate(buildPayload());
-      router.push(`/admin/courses/${id}`);
+      const res = await adminCourseCreate(buildPayload());
+      router.push(`/admin/courses/${res.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Kaydetme hatası');
     } finally {
@@ -197,6 +217,19 @@ export default function AdminCourseNewPage() {
       )}
 
       <form onSubmit={submit} className="space-y-8">
+        <div className="flex gap-4">
+          <button
+            type="submit"
+            disabled={saving}
+            className="px-6 py-2 rounded-xl bg-teal-600 text-white font-medium hover:bg-teal-700 disabled:opacity-50"
+          >
+            {saving ? 'Kaydediliyor...' : 'Kursu oluştur'}
+          </button>
+          <Link href="/admin/courses" className="px-6 py-2 rounded-xl border border-stone-300 text-stone-700">
+            İptal
+          </Link>
+        </div>
+
         <section className="rounded-2xl bg-white border border-stone-200 p-4 sm:p-6">
           <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">İçeriği düzenlediğiniz dil</p>
           <div className="flex flex-wrap gap-2">
@@ -205,11 +238,10 @@ export default function AdminCourseNewPage() {
                 key={l.id}
                 type="button"
                 onClick={() => setActiveLangId(l.id)}
-                className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                  activeLangId === l.id
-                    ? 'bg-teal-600 text-white shadow-md shadow-teal-600/30'
-                    : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-800'
-                }`}
+                className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeLangId === l.id
+                  ? 'bg-teal-600 text-white shadow-md shadow-teal-600/30'
+                  : 'bg-stone-100 text-stone-600 hover:bg-stone-200 hover:text-stone-800'
+                  }`}
               >
                 {l.code}
               </button>
@@ -222,7 +254,7 @@ export default function AdminCourseNewPage() {
           <h3 className="font-semibold text-stone-800">Temel bilgiler</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label>
-              <span className="text-sm text-stone-600">Slug *</span>
+              <span className="text-sm text-stone-600">Slug (URL uzantısı) *</span>
               <input
                 type="text"
                 required
@@ -237,19 +269,29 @@ export default function AdminCourseNewPage() {
               <input
                 type="text"
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setCategory(v);
+                  if (activeLangId != null) setCourseTranslations((prev) => prev.map((t) => (t.languageId === activeLangId ? { ...t, category: v } : t)));
+                }}
                 className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"
               />
             </label>
             <label>
               <span className="text-sm text-stone-600">Seviye</span>
-              <input
-                type="text"
+              <select
                 value={level}
-                onChange={(e) => setLevel(e.target.value)}
-                placeholder="Beginner"
-                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"
-              />
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setLevel(v);
+                  if (activeLangId != null) setCourseTranslations((prev) => prev.map((t) => (t.languageId === activeLangId ? { ...t, level: v } : t)));
+                }}
+                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 bg-white"
+              >
+                {LEVEL_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
             </label>
             <div className="sm:col-span-2 text-sm text-stone-500">
               <strong>Süre:</strong> İçeriklerden otomatik hesaplanır (video süresi, yazı okuma süresi, PDF/quiz varsayılanları).
@@ -466,48 +508,107 @@ export default function AdminCourseNewPage() {
                         {item.mustWatch && (
                           <label className="block">
                             <span className="text-sm text-stone-600">Video süresi (saniye)</span>
-                            <input
-                              type="number"
-                              min={1}
-                              value={item.videoDurationSeconds ?? ''}
-                              onChange={(e) =>
-                                updateModuleItem(modIdx, itemIdx, {
-                                  videoDurationSeconds: e.target.value ? parseInt(e.target.value, 10) : undefined,
-                                })
-                              }
-                              placeholder="Örn. 300"
-                              className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
-                            />
+                            <div className="flex gap-2">
+                              <input
+                                type="number"
+                                min={1}
+                                value={item.videoDurationSeconds ?? ''}
+                                onChange={(e) =>
+                                  updateModuleItem(modIdx, itemIdx, {
+                                    videoDurationSeconds: e.target.value ? parseInt(e.target.value, 10) : undefined,
+                                  })
+                                }
+                                placeholder="Örn. 300"
+                                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
+                              />
+                              {item.videoUrl && (
+                                <VideoDurationFetcher
+                                  videoUrl={item.videoUrl}
+                                  onDurationFound={(d) => updateModuleItem(modIdx, itemIdx, { videoDurationSeconds: d })}
+                                />
+                              )}
+                            </div>
+                            <p className="text-xs text-stone-400 mt-1">
+                              Video URL girildiğinde süre otomatik algılanmaya çalışılır.
+                            </p>
                           </label>
                         )}
                       </div>
                     )}
                     {item.type === 'Pdf' && (
                       <div className="pt-2 border-t border-stone-200">
-                        <label className="block">
-                          <span className="text-sm text-stone-600">Dosya yolu / URL</span>
-                          <input
-                            type="text"
-                            placeholder="/uploads/... veya https://..."
-                            value={item.filePath ?? ''}
-                            onChange={(e) => updateModuleItem(modIdx, itemIdx, { filePath: e.target.value })}
-                            className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
-                          />
+                        <label className="block mb-2">
+                          <span className="text-sm text-stone-600">PDF Dosyası</span>
                         </label>
+
+                        {item.filePath ? (
+                          <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 border border-amber-200">
+                            <FileUp className="w-8 h-8 text-amber-600" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-stone-900 truncate">{item.filePath.split('/').pop()}</p>
+                              <a href={`${API_BASE}${item.filePath}`} target="_blank" rel="noopener noreferrer" className="text-xs text-amber-700 hover:underline">Görüntüle</a>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => updateModuleItem(modIdx, itemIdx, { filePath: '' })}
+                              className="p-2 text-stone-400 hover:text-red-600"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <label className={`flex flex-col items-center gap-2 p-6 rounded-xl border-2 border-dashed border-stone-300 transition-colors ${uploadingItem?.modIdx === modIdx && uploadingItem?.itemIdx === itemIdx
+                            ? 'bg-stone-100 cursor-wait'
+                            : 'hover:border-amber-400 hover:bg-amber-50/50 cursor-pointer'
+                            }`}>
+                            {uploadingItem?.modIdx === modIdx && uploadingItem?.itemIdx === itemIdx ? (
+                              <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <FileUp className="w-8 h-8 text-stone-400" />
+                            )}
+                            <span className="text-sm font-medium text-stone-600">
+                              {uploadingItem?.modIdx === modIdx && uploadingItem?.itemIdx === itemIdx ? 'Yükleniyor...' : 'PDF Yükle'}
+                            </span>
+                            <input
+                              type="file"
+                              accept=".pdf"
+                              disabled={uploadingItem !== null}
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                setUploadingItem({ modIdx, itemIdx });
+                                try {
+                                  const { url } = await adminUploadCourseMaterial(file);
+                                  updateModuleItem(modIdx, itemIdx, { filePath: url });
+                                } catch (err) {
+                                  alert('Yükleme başarısız: ' + (err instanceof Error ? err.message : String(err)));
+                                } finally {
+                                  setUploadingItem(null);
+                                  e.target.value = '';
+                                }
+                              }}
+                            />
+                          </label>
+                        )}
+
+                        {/* Fallback for external URLs if needed, hidden for now to enforce upload, or we can keep it as option */}
                       </div>
                     )}
                     {item.type === 'Text' && (
                       <div className="pt-2 border-t border-stone-200">
-                        <label className="block">
-                          <span className="text-sm text-stone-600">Metin içerik (araçlar listesi vb.)</span>
-                          <textarea
-                            placeholder="İçerik..."
-                            value={item.textContent ?? ''}
-                            onChange={(e) => updateModuleItem(modIdx, itemIdx, { textContent: e.target.value })}
-                            className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm"
-                            rows={4}
-                          />
-                        </label>
+                        <div className="pt-2 border-t border-stone-200">
+                          <label className="block">
+                            <span className="text-sm text-stone-600 block mb-2">Metin içerik (araçlar listesi vb.)</span>
+                            <RichTextEditor
+                              value={item.textContent ?? ''}
+                              onChange={(html) => updateModuleItem(modIdx, itemIdx, { textContent: html })}
+                              placeholder="İçerik..."
+                              minHeight="300px"
+                              onUploadImage={adminUploadCourseMaterial}
+                            />
+                          </label>
+                        </div>
                       </div>
                     )}
                     {item.type === 'Quiz' && (
@@ -587,20 +688,7 @@ export default function AdminCourseNewPage() {
             </div>
           )}
         </section>
-
-        <div className="flex gap-4">
-          <button
-            type="submit"
-            disabled={saving}
-            className="px-6 py-2 rounded-xl bg-teal-600 text-white font-medium hover:bg-teal-700 disabled:opacity-50"
-          >
-            {saving ? 'Kaydediliyor...' : 'Kursu oluştur'}
-          </button>
-          <Link href="/admin/courses" className="px-6 py-2 rounded-xl border border-stone-300 text-stone-700">
-            İptal
-          </Link>
-        </div>
       </form>
-    </div>
+    </div >
   );
 }

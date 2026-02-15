@@ -23,14 +23,19 @@ const Footer = ({ socialLinks = [] }: FooterProps) => {
     <footer className="relative bg-[#1a202c] text-stone-300 overflow-hidden">
       {/* Subtle gradient accent */}
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent" />
-      
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-16">
           {/* Brand, Tagline & Sosyal Medya */}
           <div className="lg:col-span-1">
             <Link href="/" className="inline-flex items-center gap-2.5 mb-5">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-teal-500/25">
-                E4
+              <div className="w-12 h-12 rounded-xl overflow-hidden shadow-lg shadow-teal-500/25">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/logo.jpeg"
+                  alt="Escape4SDG"
+                  className="w-full h-full object-cover"
+                />
               </div>
               <span className="text-xl font-black text-white tracking-tight">Escape4SDG</span>
             </Link>

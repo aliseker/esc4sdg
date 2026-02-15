@@ -1,4 +1,8 @@
 {
+  "common": {
+    "siteTitle": "Escape4SDG – Learn with teamwork and the Sustainable Development Goals.",
+    "siteDescription": "Explore the SDGs with escape-room style activities, MOOCs and certificates."
+  },
   "nav": {
     "home": "Home",
     "about": "About",
@@ -23,10 +27,29 @@
     "ctaPrimary": "Explore courses",
     "ctaSecondary": "How it works"
   },
+  "certificateSection": {
+    "badge": "Certificate Programs",
+    "title": "Certify your",
+    "titleHighlight": "success",
+    "description": "Earn internationally recognised digital certificates by completing courses successfully. Progress at your own pace with our quiz system.",
+    "cta": "Start courses",
+    "benefit1Title": "International Validity",
+    "benefit1Desc": "Your certificates meet international standards and recognition.",
+    "benefit2Title": "Online Quiz System",
+    "benefit2Desc": "Learn and assess at your own pace with a flexible quiz system.",
+    "benefit3Title": "Digital Certificate",
+    "benefit3Desc": "Get a digital certificate for courses you complete successfully.",
+    "benefit4Title": "Reliable Platform",
+    "benefit4Desc": "Learn in a safe and trusted learning environment."
+  },
   "courses": {
     "headerBadge": "MOOC Courses",
     "title": "Courses",
     "subtitle": "Learn at your own pace, unlock quizzes, and earn certificates.",
+    "popularBadge": "Popular courses",
+    "sectionHeadingPrefix": "Featured",
+    "sectionHeadingHighlight": "courses",
+    "sectionSubtitle": "Team spirit and SDG-focused MOOC content.",
     "searchPlaceholder": "Search courses...",
     "filter": "Filter",
     "results": "{count} courses found",
@@ -83,6 +106,10 @@
   },
   "about": {
     "badge": "Project",
+    "missionVisionBadge": "Mission & Vision",
+    "whatWeDoTitle": "What We Do",
+    "outputsBadge": "Our Project Outputs",
+    "outputsSubtitle": "Comprehensive resources designed for teachers and educators.",
     "title": "About Us",
     "subtitle": "An innovative methodology for schools with escape-room style activities, STEAM education and sustainable development goals.",
     "intro": "Escape4SDG offers an innovative methodology that builds a long-term alliance between schools and the edutainment sector, supporting the integration of new technologies and non-formal education approaches into the classroom.",
@@ -110,12 +137,59 @@
     "cta": "Start Learning",
     "back": "Home",
     "socialTitle": "Social Media",
-    "socialHeading": "Follow us"
+    "socialHeading": "Follow us",
+    "howItWorksTitle": "How it works",
+    "howItWorksSubtitle": "Discover our platform in a few steps.",
+    "howItWorksStep1Title": "Enrol in a course",
+    "howItWorksStep1Desc": "Sign up for free to the MOOC course you're interested in.",
+    "howItWorksStep2Title": "Complete the modules",
+    "howItWorksStep2Desc": "Work through the modules in order with videos, quizzes and activities.",
+    "howItWorksStep3Title": "Pass the assessment",
+    "howItWorksStep3Desc": "Pass the assessment at the end of each module to unlock the next one.",
+    "howItWorksStep4Title": "Get your certificate",
+    "howItWorksStep4Desc": "Complete all modules and download your certificate.",
+    "stats": {
+      "moocModules": "MOOC Modules",
+      "partners": "Partner Organisations",
+      "languages": "Language Support",
+      "learningOpportunity": "Learning Opportunity"
+    }
+  },
+  "projectsList": {
+    "project1Title": "Increasing Education Access in Rural Areas Project",
+    "project1Description": "A comprehensive project aiming to strengthen digital education infrastructure in rural areas and ensure equal opportunities for education.",
+    "project1Location": "Turkey",
+    "project1Category": "Education",
+    "project2Title": "Sustainable Agriculture Practices Program",
+    "project2Description": "A project aiming to reduce environmental impact and increase productivity by training farmers in sustainable agriculture techniques.",
+    "project2Location": "Europe",
+    "project2Category": "Environment",
+    "project3Title": "Global Climate Awareness Network",
+    "project3Description": "An international project bringing together students from different countries to raise awareness on climate change and develop solution proposals.",
+    "project3Location": "Global",
+    "project3Category": "Climate",
+    "project4Title": "SDG Escape Room Education Programme",
+    "project4Description": "A training programme for teachers that teaches sustainable development goals through escape room activities.",
+    "project4Location": "Turkey",
+    "project4Category": "Education",
+    "project5Title": "Digital Literacy and Climate Network",
+    "project5Description": "An international collaboration project that builds climate awareness while developing students' digital skills.",
+    "project5Location": "Europe",
+    "project5Category": "Climate"
   },
   "projects": {
     "badge": "Projects",
     "title": "Active Projects",
+    "sectionHeadingPrefix": "Featured",
+    "sectionHeadingHighlight": "projects",
     "subtitle": "Innovative projects we run to achieve sustainable development goals.",
+    "featuredBadge": "Featured Project",
+    "viewDetails": "View details",
+    "details": "Details",
+    "viewAll": "View all projects",
+    "objectivesResultsBadge": "Objectives & Results",
+    "whatWeDoTitle": "What We Do",
+    "outputsBadge": "Our Project Outputs",
     "intro": "Escape4SDG builds a long-term alliance between schools and the edutainment sector, offering STEAM-oriented edutainment resources.",
     "objectivesTitle": "Project Objectives",
     "objectives": [
@@ -142,10 +216,10 @@
     "back": "Home"
   },
   "partners": {
+    "partners": "Partners",
     "badge": "Partners",
     "title": "Partner Organisations",
     "subtitle": "Working together towards the Sustainable Development Goals.",
-    "back": "Home",
     "intro": "ESC4SDG and our MOOC platform collaborate with institutions and projects in education and sustainable development.",
     "introDetail": "Together with our partners from schools, universities, NGOs and the edutainment sector, we deliver STEAM education and SDG-focused projects.",
     "partnerLabel": "Partner",
@@ -153,6 +227,7 @@
     "partnerGridDesc": "Institutions we collaborate with in education and sustainable development",
     "coordinator": "Coordinator",
     "partnerCount": "{count} partners",
+    "orgsFromCountries": "{count} organisations from {countries} different countries",
     "website": "Website",
     "cta": "Start Learning"
   },

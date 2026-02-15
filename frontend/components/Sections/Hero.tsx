@@ -1,12 +1,17 @@
 'use client';
 
-import { ArrowRight, Play, Users, Sparkles, Trophy, Globe } from 'lucide-react';
+import { ArrowRight, Play, Users, Sparkles, Trophy, Globe, BookOpen } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import PacmanBackground from '@/components/UI/PacmanBackground';
+import type { LanguageItem } from '@/lib/publicApi';
 
-const Hero = () => {
+type HeroProps = { languages?: LanguageItem[] };
+
+const Hero = ({ languages = [] }: HeroProps) => {
   const t = useTranslations('home');
+  const languageCodes = languages.map((l) => l.code).slice(0, 4);
+  const languageCount = languages.length;
 
   return (
     <section className="relative min-h-[85vh] flex items-center overflow-hidden">
@@ -50,13 +55,13 @@ const Hero = () => {
                 {t('ctaPrimary')}
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
               </Link>
-              <button
-                type="button"
+              <Link
+                href="/about#how-it-works"
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/90 backdrop-blur-sm text-stone-800 rounded-2xl font-bold text-lg border-2 border-stone-200 hover:border-teal-200 hover:bg-teal-50/50 hover:text-teal-800 transition-all shadow-xl shadow-stone-200/30 hover:shadow-teal-200/20"
               >
                 <Play className="w-5 h-5 text-teal-600" />
                 {t('ctaSecondary')}
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -70,8 +75,8 @@ const Hero = () => {
                   <Users className="w-7 h-7" />
                 </div>
                 <div>
-                  <div className="text-3xl sm:text-4xl font-black tracking-tight">150+</div>
-                  <div className="text-sm font-semibold text-white/90">Aktif Kurs</div>
+                  <div className="text-3xl sm:text-4xl font-black tracking-tight">15K+</div>
+                  <div className="text-sm font-semibold text-white/90">Aktif Kullanıcı</div>
                 </div>
               </div>
             </div>
@@ -79,10 +84,10 @@ const Hero = () => {
               <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
               <div className="relative">
                 <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center mb-3">
-                  <Sparkles className="w-6 h-6" />
+                  <BookOpen className="w-6 h-6" />
                 </div>
-                <div className="text-2xl sm:text-3xl font-black tracking-tight">25K+</div>
-                <div className="text-sm font-semibold text-white/90">Öğrenci</div>
+                <div className="text-2xl sm:text-3xl font-black tracking-tight">75+</div>
+                <div className="text-sm font-semibold text-white/90">Modül</div>
               </div>
             </div>
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-violet-600 p-5 sm:p-6 text-white shadow-2xl shadow-violet-500/30 card-hover-lift animate-fade-up animate-delay-500">
@@ -91,7 +96,7 @@ const Hero = () => {
                 <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center mb-3">
                   <Trophy className="w-6 h-6" />
                 </div>
-                <div className="text-2xl sm:text-3xl font-black tracking-tight">50+</div>
+                <div className="text-2xl sm:text-3xl font-black tracking-tight">10+</div>
                 <div className="text-sm font-semibold text-white/90">Sertifika</div>
               </div>
             </div>
@@ -102,16 +107,20 @@ const Hero = () => {
                     <Globe className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <div className="text-2xl font-black text-stone-900">12</div>
+                    <div className="text-2xl font-black text-stone-900">{languageCount || '—'}</div>
                     <div className="text-sm font-semibold text-stone-500">Dil</div>
                   </div>
                 </div>
-                <div className="flex gap-1.5">
-                  {['tr', 'en', 'de', 'fr'].map((l) => (
-                    <span key={l} className="w-9 h-9 rounded-xl bg-stone-100 flex items-center justify-center text-xs font-bold text-stone-600 uppercase hover:bg-orange-100 hover:text-orange-700 transition-colors">
-                      {l}
-                    </span>
-                  ))}
+                <div className="flex gap-1.5 flex-wrap justify-end">
+                  {languageCodes.length > 0 ? (
+                    languageCodes.map((code) => (
+                      <span key={code} className="w-9 h-9 rounded-xl bg-stone-100 flex items-center justify-center text-xs font-bold text-stone-600 uppercase hover:bg-orange-100 hover:text-orange-700 transition-colors">
+                        {code}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-stone-400">—</span>
+                  )}
                 </div>
               </div>
             </div>

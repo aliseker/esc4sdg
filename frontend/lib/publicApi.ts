@@ -23,12 +23,24 @@ export type PartnerItem = {
   country: string;
   website: string | null;
   logoUrl: string | null;
+  logoPosition?: string | null;
   description: string | null;
 };
 
 export async function getPartners(lang?: string): Promise<PartnerItem[]> {
   const q = lang ? `?lang=${encodeURIComponent(lang)}` : '';
   const res = await fetch(`${API_BASE}/api/partners${q}`, {
+    cache: 'no-store',
+    headers: { 'Cache-Control': 'no-cache' },
+  });
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export type LanguageItem = { id: number; code: string; name: string; sortOrder: number };
+
+export async function getLanguages(): Promise<LanguageItem[]> {
+  const res = await fetch(`${API_BASE}/api/languages`, {
     cache: 'no-store',
     headers: { 'Cache-Control': 'no-cache' },
   });

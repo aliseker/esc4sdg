@@ -12,9 +12,16 @@ using Microsoft.IdentityModel.Tokens;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors();
+// Trigger restart
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 104_857_600; // 100 MB
+});
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -22,6 +29,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<IPasswordHasher<Admin>, PasswordHasher<Admin>>();
 builder.Services.AddScoped<TokenService>();
+builder.Services.AddHttpClient<ITranslationApiService, TranslationApiService>();
 
 var jwtSection = builder.Configuration.GetSection(JwtSettings.SectionName);
 builder.Services.Configure<JwtSettings>(jwtSection);
@@ -65,6 +73,32 @@ if (app.Environment.IsDevelopment())
         .AllowAnyHeader()
         .AllowAnyMethod());
 }
+
+// 500 hatalarında JSON mesaj dön (pipeline'ın en dışında olsun ki tüm hataları yakalasın)
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next(context);
+    }
+    catch (Exception ex)
+    {
+        if (context.Response.HasStarted) throw;
+        context.Response.StatusCode = 500;
+        context.Response.ContentType = "application/json";
+        var msg = ex.InnerException?.Message ?? ex.Message;
+        var stack = app.Environment.IsDevelopment() ? ex.StackTrace : null;
+        await context.Response.WriteAsJsonAsync(new { message = "Sunucu hatası: " + msg, stack });
+    }
+});
+
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
+    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    await next();
+});
 
 app.UseStaticFiles();
 app.UseAuthentication();

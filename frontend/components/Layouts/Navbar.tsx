@@ -6,9 +6,11 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { getUserToken, getUserInfo, clearUserToken, AUTH_CHANGE_EVENT } from '@/lib/authApi';
 
-const LOCALES = [
-  { code: 'tr' as const, name: 'Türkçe', short: 'TR' },
-  { code: 'en' as const, name: 'English', short: 'EN' },
+import { getLanguages, type LanguageItem } from '@/lib/publicApi';
+
+const DEFAULT_LOCALES = [
+  { code: 'tr', name: 'Türkçe', short: 'TR' },
+  { code: 'en', name: 'English', short: 'EN' },
 ];
 
 function getLocalizedPath(pathname: string, locale: string): string {
@@ -23,12 +25,25 @@ const Navbar = () => {
   const [profileOpen, setProfileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [locales, setLocales] = useState(DEFAULT_LOCALES);
   const langRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
-  const locale = useLocale() as 'tr' | 'en';
+  const locale = useLocale() as string;
   const t = useTranslations('nav');
   const pathname = usePathname();
   const router = useRouter();
+
+  useEffect(() => {
+    getLanguages().then((list) => {
+      if (list && list.length > 0) {
+        setLocales(list.map(l => ({
+          code: l.code,
+          name: l.name,
+          short: l.code.toUpperCase()
+        })));
+      }
+    });
+  }, []);
 
   useEffect(() => {
     setIsLoggedIn(!!getUserToken());
@@ -68,9 +83,9 @@ const Navbar = () => {
     { href: '/ortaklar', label: t('partners') },
   ];
 
-  const currentLang = LOCALES.find((l) => l.code === locale);
+  const currentLang = locales.find((l) => l.code === locale) || locales[0];
 
-  const handleLocaleChange = (newLocale: 'tr' | 'en') => {
+  const handleLocaleChange = (newLocale: string) => {
     if (newLocale === locale) return;
     const url = getLocalizedPath(pathname || '/', newLocale);
     window.location.href = url;
@@ -82,19 +97,23 @@ const Navbar = () => {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? 'bg-white/95 backdrop-blur-md shadow-lg shadow-stone-200/50 border-b border-stone-200/60'
-          : 'bg-gradient-to-r from-amber-50/90 via-orange-50/70 to-amber-50/90 border-b border-amber-200/50'
-      }`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
+        ? 'bg-white/95 backdrop-blur-md shadow-lg shadow-stone-200/50 border-b border-stone-200/60'
+        : 'bg-gradient-to-r from-amber-50/90 via-orange-50/70 to-amber-50/90 border-b border-amber-200/50'
+        }`}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <nav className="flex items-center justify-between h-16 lg:h-[4.25rem]">
           <Link href="/" className="flex items-center gap-3 shrink-0 group">
-            <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-teal-500 via-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-teal-500/30 ring-2 ring-white/50 group-hover:shadow-teal-500/40 group-hover:scale-105 transition-all duration-300">
-              <Gamepad2 className="w-5 h-5" strokeWidth={2.5} />
+            <div className="relative w-12 h-12 rounded-xl overflow-hidden shadow-lg shadow-teal-500/20 group-hover:shadow-teal-500/30 group-hover:scale-105 transition-all duration-300">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/logo.jpeg"
+                alt="Escape4SDG Logo"
+                className="w-full h-full object-cover"
+              />
             </div>
-            <span className="font-extrabold text-lg tracking-tight hidden sm:inline text-stone-800 group-hover:text-teal-600 transition-colors duration-200">
+            <span className="font-extrabold text-xl tracking-tight hidden sm:inline text-stone-800 group-hover:text-teal-600 transition-colors duration-200">
               Escape4SDG
             </span>
           </Link>
@@ -127,16 +146,15 @@ const Navbar = () => {
               </button>
               {langOpen && (
                 <div className="absolute right-0 top-full mt-2 w-48 py-1.5 bg-white rounded-2xl shadow-xl shadow-stone-300/40 border-2 border-stone-100 ring-4 ring-amber-500/10">
-                  {LOCALES.map((lang) => (
+                  {locales.map((lang) => (
                     <button
                       key={lang.code}
                       type="button"
                       onClick={() => handleLocaleChange(lang.code)}
-                      className={`w-full text-left px-4 py-2.5 text-sm font-semibold rounded-xl mx-1 transition-colors ${
-                        locale === lang.code
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'text-stone-600 hover:bg-amber-50 hover:text-amber-800'
-                      }`}
+                      className={`w-full text-left px-4 py-2.5 text-sm font-semibold rounded-xl mx-1 transition-colors ${locale === lang.code
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'text-stone-600 hover:bg-amber-50 hover:text-amber-800'
+                        }`}
                     >
                       {lang.name}
                     </button>
@@ -162,57 +180,57 @@ const Navbar = () => {
                 {profileOpen && (() => {
                   const userInfo = getUserInfo();
                   return (
-                  <div className="absolute right-0 top-full mt-2 w-64 py-0 bg-white rounded-2xl shadow-xl shadow-stone-300/40 border-2 border-stone-100 ring-4 ring-amber-500/10 overflow-hidden">
-                    <div className="px-4 py-3 bg-stone-50/80 border-b border-stone-100">
-                      <p className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">{t('profile')}</p>
-                      <div className="space-y-1.5 text-sm text-stone-700">
-                        {userInfo?.displayName && (
-                          <p className="font-semibold text-stone-900 truncate" title={userInfo.displayName}>
-                            {userInfo.displayName}
-                          </p>
-                        )}
-                        {userInfo?.email && (
-                          <p className="truncate" title={userInfo.email}>
-                            {userInfo.email}
-                          </p>
-                        )}
-                        {userInfo?.username && (
-                          <p className="text-stone-600 truncate" title={userInfo.username}>
-                            @{userInfo.username}
-                          </p>
-                        )}
-                        {!userInfo?.email && !userInfo?.username && !userInfo?.displayName && (
-                          <p className="text-stone-500 italic">{t('profileNoInfo')}</p>
-                        )}
+                    <div className="absolute right-0 top-full mt-2 w-64 py-0 bg-white rounded-2xl shadow-xl shadow-stone-300/40 border-2 border-stone-100 ring-4 ring-amber-500/10 overflow-hidden">
+                      <div className="px-4 py-3 bg-stone-50/80 border-b border-stone-100">
+                        <p className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">{t('profile')}</p>
+                        <div className="space-y-1.5 text-sm text-stone-700">
+                          {userInfo?.displayName && (
+                            <p className="font-semibold text-stone-900 truncate" title={userInfo.displayName}>
+                              {userInfo.displayName}
+                            </p>
+                          )}
+                          {userInfo?.email && (
+                            <p className="truncate" title={userInfo.email}>
+                              {userInfo.email}
+                            </p>
+                          )}
+                          {userInfo?.username && (
+                            <p className="text-stone-600 truncate" title={userInfo.username}>
+                              @{userInfo.username}
+                            </p>
+                          )}
+                          {!userInfo?.email && !userInfo?.username && !userInfo?.displayName && (
+                            <p className="text-stone-500 italic">{t('profileNoInfo')}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="py-1.5">
+                        <Link
+                          href="/my-courses"
+                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-stone-600 hover:bg-stone-50 rounded-xl mx-1 transition-colors text-left"
+                          onClick={() => setProfileOpen(false)}
+                        >
+                          <BookOpen className="w-4 h-4" />
+                          {t('myCourses')}
+                        </Link>
+                        <Link
+                          href="/certificates"
+                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-stone-600 hover:bg-stone-50 rounded-xl mx-1 transition-colors text-left"
+                          onClick={() => setProfileOpen(false)}
+                        >
+                          <Award className="w-4 h-4" />
+                          {t('myCertificates')}
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-stone-600 hover:bg-red-50 hover:text-red-700 rounded-xl mx-1 transition-colors text-left"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          {t('logout')}
+                        </button>
                       </div>
                     </div>
-                    <div className="py-1.5">
-                      <Link
-                        href="/my-courses"
-                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-stone-600 hover:bg-stone-50 rounded-xl mx-1 transition-colors text-left"
-                        onClick={() => setProfileOpen(false)}
-                      >
-                        <BookOpen className="w-4 h-4" />
-                        {t('myCourses')}
-                      </Link>
-                      <Link
-                        href="/certificates"
-                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-stone-600 hover:bg-stone-50 rounded-xl mx-1 transition-colors text-left"
-                        onClick={() => setProfileOpen(false)}
-                      >
-                        <Award className="w-4 h-4" />
-                        {t('myCertificates')}
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={handleLogout}
-                        className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-stone-600 hover:bg-red-50 hover:text-red-700 rounded-xl mx-1 transition-colors text-left"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        {t('logout')}
-                      </button>
-                    </div>
-                  </div>
                   );
                 })()}
               </div>
@@ -265,16 +283,15 @@ const Navbar = () => {
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-stone-500 uppercase tracking-wider">{t('language')}</span>
                 <div className="flex gap-2">
-                  {LOCALES.map((lang) => (
+                  {locales.map((lang) => (
                     <button
                       key={lang.code}
                       type="button"
                       onClick={() => handleLocaleChange(lang.code)}
-                      className={`px-4 py-2.5 text-sm font-bold rounded-xl transition-all ${
-                        locale === lang.code
-                          ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md'
-                          : 'bg-stone-100 text-stone-600 hover:bg-amber-100 hover:text-amber-800'
-                      }`}
+                      className={`px-4 py-2.5 text-sm font-bold rounded-xl transition-all ${locale === lang.code
+                        ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md'
+                        : 'bg-stone-100 text-stone-600 hover:bg-amber-100 hover:text-amber-800'
+                        }`}
                     >
                       {lang.short}
                     </button>

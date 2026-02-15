@@ -1,37 +1,20 @@
 'use client';
 
 import { Award, ArrowRight, CheckCircle, Download, Shield, GraduationCap } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import AnimateInView from '@/components/UI/AnimateInView';
 
-const benefits = [
-  {
-    icon: Award,
-    title: 'Uluslararası Geçerlilik',
-    description: 'Sertifikalarınız uluslararası standartlarda ve tanınırlığa sahiptir.',
-    gradient: 'from-amber-500/20 to-orange-500/20',
-  },
-  {
-    icon: CheckCircle,
-    title: 'Online Quiz Sistemi',
-    description: 'Esnek quiz sistemi ile kendi hızınızda öğrenin ve değerlendirin.',
-    gradient: 'from-teal-500/20 to-emerald-500/20',
-  },
-  {
-    icon: Download,
-    title: 'Dijital Sertifika',
-    description: 'Başarıyla tamamladığınız kurslar için dijital sertifika alın.',
-    gradient: 'from-violet-500/20 to-purple-500/20',
-  },
-  {
-    icon: Shield,
-    title: 'Güvenilir Platform',
-    description: 'Güvenli ve güvenilir bir öğrenme ortamında eğitim alın.',
-    gradient: 'from-amber-500/20 to-yellow-500/20',
-  },
+const benefitKeys = [
+  { key: 1, icon: Award, gradient: 'from-amber-500/20 to-orange-500/20' },
+  { key: 2, icon: CheckCircle, gradient: 'from-teal-500/20 to-emerald-500/20' },
+  { key: 3, icon: Download, gradient: 'from-violet-500/20 to-purple-500/20' },
+  { key: 4, icon: Shield, gradient: 'from-amber-500/20 to-yellow-500/20' },
 ];
 
-const CertificateSection = () => (
+const CertificateSection = () => {
+  const t = useTranslations('certificateSection');
+  return (
   <section className="relative pt-12 lg:pt-16 pb-24 lg:pb-28 overflow-hidden">
     {/* Vibrant gradient - flows from projects */}
     <div className="absolute inset-0 bg-gradient-to-br from-teal-600 via-emerald-600 to-teal-700 text-white" />
@@ -52,31 +35,30 @@ const CertificateSection = () => (
         <AnimateInView animation="fade-up" className="lg:col-span-5">
           <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm text-white text-sm font-bold mb-6 border border-white/20">
             <Award className="w-4 h-4" />
-            Sertifika Programları
+            {t('badge')}
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-6 tracking-tight">
-            Başarınızı <span className="text-amber-300">sertifikalandırın</span>
+            {t('title')} <span className="text-amber-300">{t('titleHighlight')}</span>
           </h2>
           <p className="text-lg text-teal-100 mb-8 leading-relaxed font-medium">
-            Kursları başarıyla tamamlayarak uluslararası geçerliliğe sahip dijital sertifikalar kazanın.
-            Quiz sistemimizle kendi hızınızda ilerleyin.
+            {t('description')}
           </p>
           <Link
             href="/courses"
             className="group inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 text-stone-900 rounded-2xl font-bold hover:from-amber-400 hover:via-yellow-400 hover:to-amber-400 transition-all shadow-2xl shadow-amber-500/30 hover:shadow-amber-500/40 hover:-translate-y-0.5"
           >
             <GraduationCap className="w-5 h-5" />
-            Kurslara Başla
+            {t('cta')}
             <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </AnimateInView>
 
         {/* Right: Bento benefits grid */}
         <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {benefits.map((item, i) => {
+          {benefitKeys.map((item, i) => {
             const Icon = item.icon;
             return (
-              <AnimateInView key={i} animation="fade-up" delay={i * 100}>
+              <AnimateInView key={item.key} animation="fade-up" delay={i * 100}>
                 <div className={`group relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-xl p-6 border-2 border-white/20 hover:bg-white/15 hover:border-white/30 transition-all duration-500 card-hover-lift`}>
                   <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                   <div className="absolute top-0 right-0 w-28 h-28 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500" />
@@ -84,8 +66,8 @@ const CertificateSection = () => (
                     <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                       <Icon className="w-7 h-7 text-white" />
                     </div>
-                    <h3 className="font-bold text-white mb-2 text-lg">{item.title}</h3>
-                    <p className="text-sm text-teal-100 leading-relaxed">{item.description}</p>
+                    <h3 className="font-bold text-white mb-2 text-lg">{t(`benefit${item.key}Title`)}</h3>
+                    <p className="text-sm text-teal-100 leading-relaxed">{t(`benefit${item.key}Desc`)}</p>
                   </div>
                 </div>
               </AnimateInView>
@@ -95,6 +77,7 @@ const CertificateSection = () => (
       </div>
     </div>
   </section>
-);
+  );
+};
 
 export default CertificateSection;

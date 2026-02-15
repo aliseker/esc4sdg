@@ -46,4 +46,10 @@ public class CourseTranslation
     public string Title { get; set; } = default!;
 
     public string? Summary { get; set; }
+
+    [MaxLength(100)]
+    public string? Category { get; set; }
+
+    [MaxLength(50)]
+    public string? Level { get; set; }
 }

@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { BookOpen, Users, Shield, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
+import { BookOpen, Users, Shield } from 'lucide-react';
 import { adminDashboard } from '@/lib/adminApi';
 
 type DashboardData = { message: string; courses: number; users: number; timestamp: string } | null;
@@ -73,22 +72,6 @@ export default function AdminDashboardPage() {
           <h3 className="font-semibold text-stone-800">Admin</h3>
           <p className="text-sm text-stone-500 mt-1">JWT ile giriş yapıldı, backend hazır.</p>
         </div>
-      </div>
-
-      <div className="rounded-2xl bg-amber-50 border border-amber-200 p-6">
-        <h3 className="font-semibold text-amber-900">Sonraki adımlar</h3>
-        <ul className="mt-3 space-y-2 text-sm text-amber-800">
-          <li>• Kurs / modül / ders CRUD API’leri (backend)</li>
-          <li>• Kullanıcı listesi ve roller (backend)</li>
-          <li>• Admin panelde kurs yönetimi sayfaları (frontend)</li>
-        </ul>
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 mt-4 text-sm font-medium text-amber-700 hover:text-amber-800"
-        >
-          Siteye dön
-          <ArrowRight className="w-4 h-4" />
-        </Link>
       </div>
     </div>
   );

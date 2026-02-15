@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Layouts/Navbar";
-import Footer from "@/components/Layouts/Footer";
+import SiteShell from "@/components/Layouts/SiteShell";
 import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getMessages } from "next-intl/server";
+import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { getSocialLinks } from "@/lib/publicApi";
 
 const outfit = Outfit({
@@ -13,10 +12,13 @@ const outfit = Outfit({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "Escape4SDG – Ekip Ruhu ve Sürdürülebilir Kalkınma Hedefleri",
-  description: "Escape room tarzı etkinlikler, MOOC'lar ve sertifikalarla SDG'leri keşfedin.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("common");
+  return {
+    title: t("siteTitle"),
+    description: t("siteDescription"),
+  };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -36,12 +38,11 @@ export default async function RootLayout({
 
   return (
     <html lang={locale}>
-      <body className={`${outfit.variable} font-sans antialiased`}
-      >
+      <body className={`${outfit.variable} font-sans antialiased`}>
         <NextIntlClientProvider messages={messages}>
-          <Navbar />
-          <main className="min-h-screen">{children}</main>
-          <Footer socialLinks={socialLinks} />
+          <SiteShell socialLinks={socialLinks}>
+            {children}
+          </SiteShell>
         </NextIntlClientProvider>
       </body>
     </html>

@@ -20,7 +20,7 @@ import { courses as mockCourses, type Locale } from '@/lib/mockCourses';
 import { getCoursesList, type CourseListItem } from '@/lib/coursesApi';
 import { API_BASE } from '@/lib/authApi';
 import AnimateInView from '@/components/UI/AnimateInView';
-import studyCover from '@/images/study.jpg';
+import studyCover from '@/public/images/study.jpg';
 
 function courseImageSrc(imageUrl: string | null | undefined) {
   if (!imageUrl) return studyCover;
@@ -336,11 +336,10 @@ export default function CoursesPage() {
                 </div>
                 <button
                   onClick={() => setShowFilters(!showFilters)}
-                  className={`flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold transition-all ${
-                    showFilters
+                  className={`flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold transition-all ${showFilters
                       ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/30'
                       : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
-                  }`}
+                    }`}
                 >
                   <Filter className="w-5 h-5" />
                   {t('filter')}

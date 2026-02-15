@@ -1,15 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
-import { Users, MapPin, ExternalLink } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import AnimateInView from '@/components/UI/AnimateInView';
 import { getPartners, type PartnerItem } from '@/lib/publicApi';
 import { API_BASE } from '@/lib/authApi';
 import { partners } from '@/lib/partners';
 import type { Locale } from '@/lib/partners';
-import logoImg from '@/images/logo.jpg';
 
 type DisplayPartner = {
   id: number;
@@ -18,10 +16,23 @@ type DisplayPartner = {
   website?: string | null;
   description: string;
   logoUrl?: string | null;
+  logoPosition?: string | null;
   type?: string;
   countryCode?: string;
   role?: string;
 };
+
+function logoPositionToCss(pos: string | null | undefined): string {
+  if (pos && pos.includes('%')) return pos;
+  const map: Record<string, string> = {
+    center: '50% 50%',
+    top: '50% 0%',
+    bottom: '50% 100%',
+    left: '0% 50%',
+    right: '100% 50%',
+  };
+  return (pos && map[pos]) ? map[pos] : '50% 50%';
+}
 
 function toDisplayFromApi(p: PartnerItem): DisplayPartner {
   return {
@@ -31,6 +42,7 @@ function toDisplayFromApi(p: PartnerItem): DisplayPartner {
     website: p.website,
     description: p.description ?? '',
     logoUrl: p.logoUrl,
+    logoPosition: p.logoPosition ?? null,
   };
 }
 
@@ -42,6 +54,7 @@ function toDisplayFromStatic(locale: Locale) {
     website: p.website,
     description: p.description[locale] ?? p.description.tr,
     logoUrl: null as string | null,
+    logoPosition: null as string | null,
     type: p.type,
     countryCode: p.countryCode,
     role: p.role,
@@ -69,118 +82,106 @@ export function PartnersGrid({ locale }: { locale: Locale }) {
   }, [locale]);
 
   const partnerLogoSrc = (url: string | null | undefined) => {
-    if (!url) return logoImg;
+    if (!url) return null;
     return url.startsWith('http') ? url : `${API_BASE}${url.startsWith('/') ? '' : '/'}${url}`;
   };
-
-  const themes = [
-    { gradient: 'from-teal-500/90 via-emerald-500/80 to-teal-600/90', badge: 'from-teal-500 to-emerald-500', border: 'hover:border-teal-300' },
-    { gradient: 'from-orange-500/90 via-amber-500/80 to-orange-600/90', badge: 'from-orange-500 to-amber-500', border: 'hover:border-orange-300' },
-    { gradient: 'from-violet-500/90 via-purple-500/80 to-violet-600/90', badge: 'from-violet-500 to-purple-500', border: 'hover:border-violet-300' },
-  ];
 
   return (
     <section className="relative py-20 lg:py-28">
       <div className="absolute inset-0 bg-dots opacity-30" />
-      <div className="absolute top-0 left-0 w-96 h-96 bg-violet-200/15 rounded-full blur-3xl -translate-x-1/2" />
-      <div className="absolute bottom-0 right-0 w-80 h-80 bg-teal-200/15 rounded-full blur-3xl translate-x-1/2" />
+      <div className="absolute top-0 left-0 w-96 h-96 bg-teal-200/20 rounded-full blur-3xl -translate-x-1/2" />
+      <div className="absolute bottom-0 right-0 w-80 h-80 bg-stone-200/20 rounded-full blur-3xl translate-x-1/2" />
 
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <AnimateInView animation="fade-up" className="text-center mb-16">
-          <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-violet-100 text-violet-700 text-sm font-bold mb-6 border border-violet-200/60">
-            <Users className="w-4 h-4" />
-            {t('partnerCount', { count: displayList.length })}
-            {loading && ' ...'}
-          </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-stone-900 mb-4 tracking-tight">
-            {t('partnerOrganisations')}
-          </h2>
-          <p className="text-lg text-stone-600 max-w-2xl mx-auto font-medium">
-            {t('partnerGridDesc')}
-          </p>
-        </AnimateInView>
-
         {loading ? (
-          <div className="flex justify-center py-12">
+          <div className="flex justify-center py-16">
             <div className="w-10 h-10 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {displayList.map((partner, i) => {
-              const isCoordinator = !!partner.role;
-              const theme = themes[i % 3];
-              const logoSrc = partnerLogoSrc(partner.logoUrl);
-              return (
-                <AnimateInView key={partner.id} animation="fade-up" delay={Math.min(i * 60, 300)}>
-                  <div
-                    className={`group relative overflow-hidden rounded-2xl bg-white shadow-lg shadow-stone-200/40 border-2 border-stone-200/80 ${theme.border} hover:shadow-xl transition-all duration-300 flex flex-col h-full`}
-                  >
-                    <div className="relative w-full aspect-[16/10] flex-shrink-0 overflow-hidden bg-stone-100 flex items-center justify-center p-4">
-                      <Image
-                        src={logoSrc}
-                        alt={partner.name}
-                        fill
-                        className={partner.logoUrl ? 'object-contain group-hover:scale-105 transition-transform duration-500' : 'object-cover group-hover:scale-105 transition-transform duration-500'}
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      />
-                      <div className={`absolute inset-0 bg-gradient-to-t ${theme.gradient} opacity-40`} />
-                      {partner.countryCode && (
-                        <div className="absolute top-2 left-2 px-2.5 py-1 rounded-lg bg-white/95 backdrop-blur-sm shadow">
-                          <span className="text-xs font-bold text-stone-700">{partner.countryCode}</span>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {displayList.map((partner, i) => {
+                const isCoordinator = !!partner.role;
+                const logoSrc = partnerLogoSrc(partner.logoUrl);
+                const hasLogo = !!logoSrc;
+                return (
+                  <AnimateInView key={partner.id} animation="fade-up" delay={Math.min(i * 50, 250)}>
+                    <article className="relative flex flex-col h-full overflow-visible">
+                      {/* Floating logo – fotodan daire kırpılmış, tek daire alan */}
+                      <div className="absolute left-1/2 top-0 z-20 h-28 w-28 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full bg-stone-100">
+                        {hasLogo ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={logoSrc}
+                            alt={partner.name}
+                            className="h-full w-full object-cover"
+                            style={{ objectPosition: logoPositionToCss(partner.logoPosition) }}
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center">
+                            <Building2 className="h-10 w-10 text-stone-400" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Kart gövdesi: overflow-hidden sadece burada, logo dışarıda kalır */}
+                      <div
+                        className="relative flex flex-1 flex-col rounded-[48px] bg-white overflow-hidden transition-shadow duration-200 hover:shadow-lg"
+                        style={{
+                          boxShadow:
+                            '0 4px 6px -1px rgba(0,0,0,0.04), 0 2px 4px -2px rgba(0,0,0,0.03), -8px -8px 24px -8px rgba(107,89,211,0.08), 8px 8px 24px -8px rgba(107,89,211,0.06)',
+                        }}
+                      >
+                        {/* Dekoratif köşe gölgeleri (sol üst / sağ alt oyuk hissi) */}
+                        <div
+                          className="pointer-events-none absolute -left-4 -top-4 h-24 w-24 rounded-full opacity-30"
+                          style={{ background: 'radial-gradient(circle, rgba(107,89,211,0.15) 0%, transparent 70%)' }}
+                          aria-hidden
+                        />
+                        <div
+                          className="pointer-events-none absolute -bottom-4 -right-4 h-24 w-24 rounded-full opacity-30"
+                          style={{ background: 'radial-gradient(circle, rgba(107,89,211,0.12) 0%, transparent 70%)' }}
+                          aria-hidden
+                        />
+
+                        {/* İçerik – logo ile çakışmaması için üst padding */}
+                        <div className="flex flex-1 flex-col pt-20 pb-6 px-6">
+                          <div className="pb-4 text-center">
+                            {partner.website ? (
+                              <a
+                                href={partner.website}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xl font-bold text-neutral-900 hover:text-neutral-700 hover:underline underline-offset-2 transition-colors block tracking-tight"
+                              >
+                                {partner.name}
+                              </a>
+                            ) : (
+                              <h3 className="text-xl font-bold text-neutral-900 tracking-tight">
+                                {partner.name}
+                              </h3>
+                            )}
+                          </div>
+
+                          {partner.description && (
+                            <p className="flex-1 text-[15px] leading-[1.6] text-left text-neutral-600 break-words">
+                              {partner.description}
+                            </p>
+                          )}
+
+                          {isCoordinator && (
+                            <div className="mt-4 pt-3 border-t border-neutral-200">
+                              <span className="text-xs font-semibold uppercase tracking-wide text-teal-600">{t('coordinator')}</span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                      {isCoordinator && (
-                        <div className={`absolute top-2 right-2 px-2.5 py-1 rounded-lg bg-gradient-to-r ${theme.badge} text-white text-xs font-bold shadow`}>
-                          {t('coordinator')}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 p-5 flex flex-col">
-                      {partner.type && (
-                        <span className="inline-flex w-fit px-2.5 py-1 rounded-lg bg-stone-100 text-stone-600 text-xs font-semibold mb-3">
-                          {partner.type}
-                        </span>
-                      )}
-                      {partner.website ? (
-                        <a
-                          href={partner.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-lg font-black text-stone-900 mb-2 leading-tight hover:text-teal-600 transition-colors underline-offset-4 hover:underline"
-                        >
-                          {partner.name}
-                        </a>
-                      ) : (
-                        <h3 className="text-lg font-black text-stone-900 mb-2 leading-tight">
-                          {partner.name}
-                        </h3>
-                      )}
-                      <p className="flex items-center gap-1.5 text-xs text-stone-500 mb-3">
-                        <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-                        {partner.country}
-                      </p>
-                      {partner.description && (
-                        <p className="text-stone-600 leading-relaxed text-sm flex-1 mb-4">
-                          {partner.description}
-                        </p>
-                      )}
-                      {partner.website && (
-                        <a
-                          href={partner.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 text-sm font-bold text-teal-600 hover:text-teal-700 mt-auto"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                          {t('website')}
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                </AnimateInView>
-              );
-            })}
-          </div>
+                      </div>
+                    </article>
+                  </AnimateInView>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </section>

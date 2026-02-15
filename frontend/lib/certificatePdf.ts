@@ -11,59 +11,45 @@ export function downloadCertificatePdf(options: {
 }): void {
   const { userName, courseTitle, issuedAt, filename = 'Escape4SDG-Sertifika.pdf' } = options;
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-  const w = doc.getPageWidth();
-  const h = doc.getPageHeight();
+  const w = doc.internal.pageSize.getWidth();
+  const h = doc.internal.pageSize.getHeight();
 
-  // Background tint
-  doc.setFillColor(240, 253, 244); // teal-50
-  doc.rect(0, 0, w, h, 'F');
+  // Load the background image
+  const img = new Image();
+  img.src = '/images/sertifika.jpeg';
 
-  // Border
-  doc.setDrawColor(20, 184, 166); // teal-500
-  doc.setLineWidth(1.5);
-  doc.rect(8, 8, w - 16, h - 16);
+  img.onload = () => {
+    // Add background image
+    doc.addImage(img, 'JPEG', 0, 0, w, h);
 
-  // Escape4SDG logo text
-  doc.setFontSize(28);
-  doc.setTextColor(20, 184, 166);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Escape4SDG', w / 2, 32, { align: 'center' });
+    // Participant name - Centered below "This is to certify that"
+    // Adjust Y coordinate based on the template
+    doc.setFontSize(24);
+    doc.setTextColor(30, 41, 59); // Dark slate
+    doc.setFont('helvetica', 'bold');
+    doc.text(userName, w / 2, 95, { align: 'center' });
 
-  // Certificate title
-  doc.setFontSize(14);
-  doc.setTextColor(100, 116, 139);
-  doc.setFont('helvetica', 'normal');
-  doc.text('SERTİFİKA', w / 2, 48, { align: 'center' });
+    // Course name - Centered below "has successfully completed..."
+    doc.setFontSize(20);
+    doc.setTextColor(20, 184, 166); // Teal
+    doc.setFont('helvetica', 'bold');
+    doc.text(courseTitle, w / 2, 125, { align: 'center', maxWidth: w - 60 });
 
-  // Course name
-  doc.setFontSize(18);
-  doc.setTextColor(30, 41, 59);
-  doc.setFont('helvetica', 'bold');
-  doc.text(courseTitle, w / 2, 72, { align: 'center', maxWidth: w - 40 });
+    // Date - Bottom right or where appropriate
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139);
+    doc.setFont('helvetica', 'normal');
+    const dateStr = new Date(issuedAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+    // Assuming there is a space for date or we just place it at the bottom
+    doc.text(`Tarih: ${dateStr}`, w - 20, h - 20, { align: 'right' });
 
-  // "This certifies that"
-  doc.setFontSize(11);
-  doc.setTextColor(100, 116, 139);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Bu sertifika aşağıda adı geçen kişinin ilgili kursu başarıyla tamamladığını doğrular.', w / 2, 95, { align: 'center' });
+    doc.save(filename);
+  };
 
-  // Participant name
-  doc.setFontSize(22);
-  doc.setTextColor(20, 184, 166);
-  doc.setFont('helvetica', 'bold');
-  doc.text(userName, w / 2, 115, { align: 'center' });
-
-  // Date
-  doc.setFontSize(10);
-  doc.setTextColor(100, 116, 139);
-  doc.setFont('helvetica', 'normal');
-  const dateStr = new Date(issuedAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
-  doc.text(`Tarih: ${dateStr}`, w / 2, 135, { align: 'center' });
-
-  // Footer
-  doc.setFontSize(9);
-  doc.setTextColor(148, 163, 184);
-  doc.text('Escape4SDG – Sürdürülebilir Kalkınma Hedefleri için Eğitim', w / 2, h - 20, { align: 'center' });
-
-  doc.save(filename);
+  img.onerror = () => {
+    // Fallback if image fails to load
+    console.error('Certificate background failed to load');
+    doc.text('Certificate Generation Failed - Image not found', 10, 10);
+    doc.save('error.pdf');
+  };
 }

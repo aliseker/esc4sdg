@@ -21,7 +21,7 @@ export default function AdminLoginPage() {
     setLoading(true);
     try {
       const data = await adminLogin(email, password);
-      setStoredToken(data.token);
+      setStoredToken(data.token, data.expiresAt);
       router.push('/admin');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Login failed';

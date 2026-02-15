@@ -70,9 +70,13 @@ export async function getMyCourses(token: string, lang?: string): Promise<MyCour
 }
 
 export async function getCoursesList(lang: string): Promise<CourseListItem[]> {
-  const res = await fetch(`${API_BASE}/api/courses?lang=${encodeURIComponent(lang)}`);
-  if (!res.ok) return [];
-  return res.json();
+  try {
+    const res = await fetch(`${API_BASE}/api/courses?lang=${encodeURIComponent(lang)}`);
+    if (!res.ok) return [];
+    return res.json();
+  } catch {
+    return [];
+  }
 }
 
 export async function getCourseBySlug(slug: string, lang: string): Promise<CourseDetail | null> {

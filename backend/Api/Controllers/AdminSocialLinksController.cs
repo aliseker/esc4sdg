@@ -1,5 +1,6 @@
 using backend.Api.Data;
 using backend.Api.Entities;
+using backend.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -34,29 +35,61 @@ public sealed class AdminSocialLinksController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] SocialLinkInput input, CancellationToken cancellationToken)
+    public async Task<IActionResult> Create([FromBody] SocialLinkInput? input, CancellationToken cancellationToken)
     {
-        var maxOrder = await _context.SocialLinks.Select(x => x.SortOrder).DefaultIfEmpty(-1).MaxAsync(cancellationToken);
-        var s = new SocialLink
+        if (input == null)
+            return BadRequest(new { message = "Platform ve URL zorunludur." });
+        var platform = (input.Platform ?? "").Trim();
+        var url = (input.Url ?? "").Trim();
+        if (string.IsNullOrEmpty(platform))
+            return BadRequest(new { message = "Platform seçin." });
+        if (string.IsNullOrEmpty(url))
+            return BadRequest(new { message = "URL girin." });
+        if (platform.Length > 50)
+            return BadRequest(new { message = "Platform adı çok uzun." });
+        if (url.Length > 500)
+            return BadRequest(new { message = "URL çok uzun." });
+        if (InputSanitizer.ContainsDangerousChars(platform) || InputSanitizer.ContainsDangerousChars(input.Label))
+            return BadRequest(new { message = "Geçersiz karakter içeriyor." });
+        if (!InputSanitizer.IsValidUrl(url))
+            return BadRequest(new { message = "URL http veya https ile başlamalı." });
+        try
         {
-            Platform = input.Platform.Trim(),
-            Label = string.IsNullOrWhiteSpace(input.Label) ? null : input.Label.Trim(),
-            Url = input.Url.Trim(),
-            SortOrder = maxOrder + 1
-        };
-        _context.SocialLinks.Add(s);
-        await _context.SaveChangesAsync(cancellationToken);
-        return CreatedAtAction(nameof(Get), new { id = s.Id }, new { id = s.Id });
+            var maxOrder = await _context.SocialLinks.Select(x => x.SortOrder).DefaultIfEmpty(-1).MaxAsync(cancellationToken);
+            var s = new SocialLink
+            {
+                Platform = platform,
+                Label = string.IsNullOrWhiteSpace(input.Label) ? null : input.Label.Trim(),
+                Url = url,
+                SortOrder = maxOrder + 1
+            };
+            _context.SocialLinks.Add(s);
+            await _context.SaveChangesAsync(cancellationToken);
+            return CreatedAtAction(nameof(Get), new { id = s.Id }, new { id = s.Id });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Veritabanı hatası: " + (ex.InnerException?.Message ?? ex.Message) });
+        }
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, [FromBody] SocialLinkInput input, CancellationToken cancellationToken)
+    public async Task<IActionResult> Update(int id, [FromBody] SocialLinkInput? input, CancellationToken cancellationToken)
     {
+        if (input == null) return BadRequest(new { message = "Geçersiz istek." });
+        var platform = (input.Platform ?? "").Trim();
+        var url = (input.Url ?? "").Trim();
+        if (string.IsNullOrEmpty(platform) || string.IsNullOrEmpty(url))
+            return BadRequest(new { message = "Platform ve URL zorunludur." });
+        if (InputSanitizer.ContainsDangerousChars(platform) || InputSanitizer.ContainsDangerousChars(input.Label))
+            return BadRequest(new { message = "Geçersiz karakter içeriyor." });
+        if (!InputSanitizer.IsValidUrl(url))
+            return BadRequest(new { message = "URL http veya https ile başlamalı." });
         var s = await _context.SocialLinks.FindAsync(new object[] { id }, cancellationToken);
         if (s == null) return NotFound();
-        s.Platform = input.Platform.Trim();
+        s.Platform = platform;
         s.Label = string.IsNullOrWhiteSpace(input.Label) ? null : input.Label.Trim();
-        s.Url = input.Url.Trim();
+        s.Url = url;
         await _context.SaveChangesAsync(cancellationToken);
         return Ok(new { id = s.Id });
     }

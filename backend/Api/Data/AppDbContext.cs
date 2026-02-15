@@ -26,6 +26,10 @@ public class AppDbContext : DbContext
     public DbSet<UserCourseEnrollment> UserCourseEnrollments => Set<UserCourseEnrollment>();
     public DbSet<UserModuleItemProgress> UserModuleItemProgresses => Set<UserModuleItemProgress>();
     public DbSet<Certificate> Certificates => Set<Certificate>();
+    public DbSet<Project> Projects => Set<Project>();
+    public DbSet<ProjectTranslation> ProjectTranslations => Set<ProjectTranslation>();
+    public DbSet<ProjectGalleryImage> ProjectGalleryImages => Set<ProjectGalleryImage>();
+    public DbSet<SiteTranslation> SiteTranslations => Set<SiteTranslation>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -80,5 +84,45 @@ public class AppDbContext : DbContext
         builder.Entity<Certificate>()
             .HasIndex(c => new { c.UserId, c.CourseId })
             .IsUnique();
+
+        builder.Entity<Certificate>()
+            .HasOne(c => c.Course)
+            .WithMany()
+            .HasForeignKey(c => c.CourseId)
+            .OnDelete(Microsoft.EntityFrameworkCore.DeleteBehavior.Cascade);
+
+        builder.Entity<UserCourseEnrollment>()
+            .HasOne(e => e.Course)
+            .WithMany()
+            .HasForeignKey(e => e.CourseId)
+            .OnDelete(Microsoft.EntityFrameworkCore.DeleteBehavior.Cascade);
+
+        builder.Entity<UserModuleItemProgress>()
+            .HasOne(p => p.ModuleItem)
+            .WithMany()
+            .HasForeignKey(p => p.ModuleItemId)
+            .OnDelete(Microsoft.EntityFrameworkCore.DeleteBehavior.Cascade);
+
+        builder.Entity<Project>()
+            .HasIndex(p => p.Slug)
+            .IsUnique();
+
+        builder.Entity<ProjectTranslation>()
+            .HasKey(pt => new { pt.ProjectId, pt.LanguageId });
+
+        builder.Entity<SiteTranslation>()
+            .HasKey(st => new { st.LanguageId, st.Key });
+
+        builder.Entity<SiteTranslation>()
+            .HasOne(st => st.Language)
+            .WithMany()
+            .HasForeignKey(st => st.LanguageId)
+            .OnDelete(Microsoft.EntityFrameworkCore.DeleteBehavior.Cascade);
+
+        builder.Entity<ProjectGalleryImage>()
+            .HasOne(g => g.Project)
+            .WithMany(p => p.GalleryImages)
+            .HasForeignKey(g => g.ProjectId)
+            .OnDelete(Microsoft.EntityFrameworkCore.DeleteBehavior.Cascade);
     }
 }

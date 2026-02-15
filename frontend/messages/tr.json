@@ -1,4 +1,8 @@
 {
+  "common": {
+    "siteTitle": "Escape4SDG – Ekip ruhu ve sürdürülebilir kalkınma hedefleriyle öğrenin.",
+    "siteDescription": "Escape room tarzı etkinlikler, MOOC'lar ve sertifikalarla SDG'leri keşfedin."
+  },
   "nav": {
     "home": "Ana Sayfa",
     "about": "Hakkımızda",
@@ -23,10 +27,29 @@
     "ctaPrimary": "Kurslara başla",
     "ctaSecondary": "Nasıl çalışır?"
   },
+  "certificateSection": {
+    "badge": "Sertifika Programları",
+    "title": "Başarınızı",
+    "titleHighlight": "sertifikalandırın",
+    "description": "Kursları başarıyla tamamlayarak uluslararası geçerliliğe sahip dijital sertifikalar kazanın. Quiz sistemimizle kendi hızınızda ilerleyin.",
+    "cta": "Kurslara Başla",
+    "benefit1Title": "Uluslararası Geçerlilik",
+    "benefit1Desc": "Sertifikalarınız uluslararası standartlarda ve tanınırlığa sahiptir.",
+    "benefit2Title": "Online Quiz Sistemi",
+    "benefit2Desc": "Esnek quiz sistemi ile kendi hızınızda öğrenin ve değerlendirin.",
+    "benefit3Title": "Dijital Sertifika",
+    "benefit3Desc": "Başarıyla tamamladığınız kurslar için dijital sertifika alın.",
+    "benefit4Title": "Güvenilir Platform",
+    "benefit4Desc": "Güvenli ve güvenilir bir öğrenme ortamında eğitim alın."
+  },
   "courses": {
     "headerBadge": "MOOC Kursları",
     "title": "Kurslar",
     "subtitle": "Kendi hızınızda öğrenin, quiz'lerle ilerleyin ve sertifika kazanın.",
+    "popularBadge": "Popüler Kurslar",
+    "sectionHeadingPrefix": "Öne çıkan",
+    "sectionHeadingHighlight": "kurslar",
+    "sectionSubtitle": "Ekip ruhu ve SDG odaklı MOOC içerikleri.",
     "searchPlaceholder": "Kurs ara...",
     "filter": "Filtrele",
     "results": "{count} kurs bulundu",
@@ -83,6 +106,10 @@
   },
   "about": {
     "badge": "Proje",
+    "missionVisionBadge": "Misyon & Vizyon",
+    "whatWeDoTitle": "Neler Yapıyoruz?",
+    "outputsBadge": "Projemizin Çıktıları",
+    "outputsSubtitle": "Öğretmenler ve eğitimciler için tasarlanmış kapsamlı kaynaklar",
     "title": "Hakkımızda",
     "subtitle": "Escape room tarzı etkinlikler, STEAM eğitimi ve sürdürülebilir kalkınma hedefleriyle okullar için yenilikçi bir metodoloji.",
     "intro": "Escape4SDG, okullar ve edutainment sektörü arasında uzun vadeli bir ittifak kurarak, yeni teknolojilerin ve informal eğitim yaklaşımlarının sınıfa entegrasyonunu destekleyen yenilikçi bir metodoloji sunar.",
@@ -110,12 +137,59 @@
     "cta": "Kurslara Başla",
     "back": "Ana Sayfa",
     "socialTitle": "Sosyal Medya",
-    "socialHeading": "Bizi takip edin"
+    "socialHeading": "Bizi takip edin",
+    "howItWorksTitle": "Nasıl çalışır?",
+    "howItWorksSubtitle": "Platformumuzu birkaç adımda keşfedin.",
+    "howItWorksStep1Title": "Kursa kayıt olun",
+    "howItWorksStep1Desc": "İlgilendiğiniz MOOC kursuna ücretsiz kayıt olun.",
+    "howItWorksStep2Title": "Modülleri tamamlayın",
+    "howItWorksStep2Desc": "Videolar, quiz'ler ve etkinliklerle modülleri sırayla tamamlayın.",
+    "howItWorksStep3Title": "Değerlendirmeyi geçin",
+    "howItWorksStep3Desc": "Her modülün sonundaki değerlendirmeyi geçin, sonraki modül açılsın.",
+    "howItWorksStep4Title": "Sertifikanızı alın",
+    "howItWorksStep4Desc": "Tüm modülleri tamamlayın ve sertifikanızı indirin.",
+    "stats": {
+      "moocModules": "MOOC Modülü",
+      "partners": "Ortak Kuruluş",
+      "languages": "Dil Desteği",
+      "learningOpportunity": "Öğrenme Fırsatı"
+    }
+  },
+  "projectsList": {
+    "project1Title": "Kırsal Bölgelerde Eğitim Erişimini Artırma Projesi",
+    "project1Description": "Türkiye'nin kırsal bölgelerinde dijital eğitim altyapısını güçlendirerek eğitim fırsat eşitliğini sağlamayı hedefleyen kapsamlı bir proje.",
+    "project1Location": "Türkiye",
+    "project1Category": "Eğitim",
+    "project2Title": "Sürdürülebilir Tarım Uygulamaları Programı",
+    "project2Description": "Çiftçilere sürdürülebilir tarım teknikleri konusunda eğitim vererek çevresel etkiyi azaltmayı ve verimliliği artırmayı amaçlayan proje.",
+    "project2Location": "Avrupa",
+    "project2Category": "Çevre",
+    "project3Title": "Küresel İklim Farkındalık Ağı",
+    "project3Description": "Farklı ülkelerden öğrencileri bir araya getirerek iklim değişikliği konusunda farkındalık yaratmayı ve çözüm önerileri geliştirmeyi hedefleyen uluslararası proje.",
+    "project3Location": "Küresel",
+    "project3Category": "İklim",
+    "project4Title": "SDG Escape Room Eğitim Programı",
+    "project4Description": "Sürdürülebilir kalkınma hedeflerini escape room etkinlikleriyle öğreten, öğretmenlere yönelik eğitim programı.",
+    "project4Location": "Türkiye",
+    "project4Category": "Eğitim",
+    "project5Title": "Dijital Okuryazarlık ve İklim Ağı",
+    "project5Description": "Öğrencilerin dijital becerilerini geliştirirken iklim farkındalığı oluşturan uluslararası iş birliği projesi.",
+    "project5Location": "Avrupa",
+    "project5Category": "İklim"
   },
   "projects": {
     "badge": "Projeler",
     "title": "Aktif Projeler",
+    "sectionHeadingPrefix": "Öne çıkan",
+    "sectionHeadingHighlight": "projeler",
     "subtitle": "Sürdürülebilir kalkınma hedeflerine ulaşmak için yürüttüğümüz yenilikçi projeler.",
+    "featuredBadge": "Öne Çıkan Proje",
+    "viewDetails": "Detayları İncele",
+    "details": "Detaylar",
+    "viewAll": "Tüm Projeleri Görüntüle",
+    "objectivesResultsBadge": "Hedefler & Çıktılar",
+    "whatWeDoTitle": "Neler Yapıyoruz?",
+    "outputsBadge": "Projemizin Çıktıları",
     "intro": "Escape4SDG, okullar ve edutainment sektörü arasında uzun vadeli bir ittifak kurarak STEAM odaklı edutainment kaynakları sunar.",
     "objectivesTitle": "Proje Hedefleri",
     "objectives": [
@@ -142,10 +216,10 @@
     "back": "Ana Sayfa"
   },
   "partners": {
+    "partners": "Ortaklar",
     "badge": "Ortaklar",
     "title": "Ortak Kuruluşlar",
     "subtitle": "Sürdürülebilir kalkınma hedeflerine birlikte ulaşıyoruz.",
-    "back": "Ana Sayfa",
     "intro": "ESC4SDG ve MOOC platformumuz, eğitim ve sürdürülebilir kalkınma alanında faaliyet gösteren kurum ve projelerle iş birliği yapmaktadır.",
     "introDetail": "Okullar, üniversiteler, sivil toplum kuruluşları ve edutainment sektöründen ortaklarımızla STEAM eğitimi ve SDG odaklı projeleri hayata geçiriyoruz.",
     "partnerLabel": "Ortak",
@@ -153,6 +227,7 @@
     "partnerGridDesc": "Eğitim ve sürdürülebilir kalkınma alanında iş birliği yaptığımız kurumlar",
     "coordinator": "Koordinatör",
     "partnerCount": "{count} ortak",
+    "orgsFromCountries": "{count} kuruluş, {countries} farklı ülkeden",
     "website": "Web sitesi",
     "cta": "Kurslara Başla"
   },

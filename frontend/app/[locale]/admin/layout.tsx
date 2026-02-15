@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import Link from 'next/link';
-import { Shield, LayoutDashboard, LogOut, Menu, X, Users, Share2, Languages, BookOpen } from 'lucide-react';
-import { getStoredToken, clearStoredToken, adminMe } from '@/lib/adminApi';
+import { Shield, LayoutDashboard, LogOut, Menu, X, Users, Share2, Languages, BookOpen, FolderOpen, MessageSquare } from 'lucide-react';
+import { getStoredToken, clearStoredToken, adminMe, ADMIN_UNAUTHORIZED_EVENT } from '@/lib/adminApi';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -34,6 +34,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       });
   }, [mounted, isLoginPage, router]);
 
+  useEffect(() => {
+    const onUnauthorized = () => router.replace('/admin/login');
+    window.addEventListener(ADMIN_UNAUTHORIZED_EVENT, onUnauthorized);
+    return () => window.removeEventListener(ADMIN_UNAUTHORIZED_EVENT, onUnauthorized);
+  }, [router]);
+
   const handleLogout = () => {
     clearStoredToken();
     router.replace('/admin/login');
@@ -41,9 +47,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const navItems: { href: string; label: string; icon: typeof LayoutDashboard }[] = [
     { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/admin/projects', label: 'Projeler', icon: FolderOpen },
     { href: '/admin/partners', label: 'Ortaklar', icon: Users },
     { href: '/admin/social', label: 'Sosyal Medya', icon: Share2 },
     { href: '/admin/languages', label: 'Diller', icon: Languages },
+    { href: '/admin/translations', label: 'Site çevirileri', icon: MessageSquare },
     { href: '/admin/courses', label: 'Kurslar', icon: BookOpen },
   ];
 
@@ -66,13 +74,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen bg-stone-50 flex">
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-40 w-64 bg-white border-r border-stone-200 flex flex-col transform transition-transform lg:transform-none ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        }`}
+        className={`fixed lg:static inset-y-0 left-0 z-40 w-64 bg-white border-r border-stone-200 flex flex-col transform transition-transform lg:transform-none ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          }`}
       >
         <div className="p-4 border-b border-stone-100 flex items-center justify-between">
           <Link href="/admin" className="flex items-center gap-2 text-stone-800 font-bold">
-            <Shield className="w-6 h-6 text-amber-600" />
+            <div className="w-8 h-8 rounded-lg overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/logo.jpeg"
+                alt="Admin Logo"
+                className="w-full h-full object-cover"
+              />
+            </div>
             Admin
           </Link>
           <button
@@ -88,9 +102,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link
               key={href}
               href={href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${
-                isActive(href) ? 'bg-amber-100 text-amber-900' : 'text-stone-600 hover:bg-stone-100'
-              }`}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${isActive(href) ? 'bg-amber-100 text-amber-900' : 'text-stone-600 hover:bg-stone-100'
+                }`}
             >
               <Icon className="w-5 h-5" />
               {label}
@@ -121,7 +134,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Menu className="w-5 h-5" />
           </button>
           <Link href="/admin" className="flex items-center gap-2 shrink-0">
-            <Shield className="w-5 h-5 text-amber-600" />
+            <div className="w-8 h-8 rounded-lg overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/logo.jpeg"
+                alt="Admin Logo"
+                className="w-full h-full object-cover"
+              />
+            </div>
             <h1 className="text-lg font-semibold text-stone-800">Admin Panel</h1>
           </Link>
           <nav className="hidden md:flex items-center gap-1 flex-1 min-w-0">
@@ -129,11 +149,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={href}
                 href={href}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
-                  isActive(href)
-                    ? 'bg-amber-100 text-amber-900'
-                    : 'text-stone-600 hover:bg-stone-100'
-                }`}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${isActive(href)
+                  ? 'bg-amber-100 text-amber-900'
+                  : 'text-stone-600 hover:bg-stone-100'
+                  }`}
               >
                 <Icon className="w-4 h-4 shrink-0" />
                 {label}

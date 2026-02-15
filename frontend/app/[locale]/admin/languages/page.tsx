@@ -10,6 +10,21 @@ import {
 } from '@/lib/adminApi';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 
+const PREDEFINED_LANGUAGES = [
+  { code: 'tr', name: 'Türkçe' },
+  { code: 'en', name: 'English' },
+  { code: 'de', name: 'Deutsch' },
+  { code: 'fr', name: 'Français' },
+  { code: 'es', name: 'Español' },
+  { code: 'it', name: 'Italiano' },
+  { code: 'ru', name: 'Русский' },
+  { code: 'ar', name: 'العربية' },
+  { code: 'zh', name: '中文' },
+  { code: 'ja', name: '日本語' },
+  { code: 'pt', name: 'Português' },
+  { code: 'nl', name: 'Nederlands' },
+];
+
 export default function AdminLanguagesPage() {
   const [list, setList] = useState<Language[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,28 +113,31 @@ export default function AdminLanguagesPage() {
         <form onSubmit={submit} className="rounded-2xl bg-white border border-stone-200 p-6 space-y-4">
           <h3 className="font-semibold text-stone-800">{editing ? 'Dil düzenle' : 'Yeni dil'}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <label className="block">
-              <span className="text-sm font-medium text-stone-600">Kod *</span>
-              <input
-                type="text"
-                required
-                placeholder="tr, en, de..."
-                value={form.code}
-                onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
-                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"
-              />
-            </label>
-            <label className="block">
-              <span className="text-sm font-medium text-stone-600">Ad *</span>
-              <input
-                type="text"
-                required
-                placeholder="Türkçe, English..."
-                value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"
-              />
-            </label>
+            <div className="sm:col-span-2">
+              <label className="block">
+                <span className="text-sm font-medium text-stone-600">Dil Seçin</span>
+                <select
+                  className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 bg-white"
+                  value={form.code}
+                  onChange={(e) => {
+                    const code = e.target.value;
+                    const selected = PREDEFINED_LANGUAGES.find((l) => l.code === code);
+                    if (selected) {
+                      setForm((f) => ({ ...f, code: selected.code, name: selected.name }));
+                    }
+                  }}
+                >
+                  <option value="">-- Dil Seçiniz --</option>
+                  {PREDEFINED_LANGUAGES.map((l) => (
+                    <option key={l.code} value={l.code}>
+                      {l.name} ({l.code})
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            {/* Gizli inputlar, form gönderimi için gerekebilir ama state zaten dolu */}
+
             <label className="block">
               <span className="text-sm font-medium text-stone-600">Sıra</span>
               <input
@@ -129,6 +147,11 @@ export default function AdminLanguagesPage() {
                 className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"
               />
             </label>
+
+            {/* Manuel düzenleme imkanı için (isteğe bağlı, şimdilik readonly gösterelim veya gizleyelim. Kullanıcı 'seçme usulü' dediği için sadece verify amaçlı gösterelim) */}
+            <div className="sm:col-span-3 text-xs text-stone-500">
+              Seçilen: <strong>{form.name}</strong> ({form.code})
+            </div>
           </div>
           <div className="flex gap-2">
             <button type="submit" className="px-4 py-2 rounded-xl bg-teal-600 text-white font-medium hover:bg-teal-700">

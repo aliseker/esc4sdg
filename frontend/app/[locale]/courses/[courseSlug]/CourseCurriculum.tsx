@@ -68,13 +68,16 @@ export function CourseCurriculum({
                 </button>
                 {isOpen && (
                   <div className="px-6 pb-4 pl-14 space-y-2">
-                    {mod.items.map((item) =>
-                      canOpenItems ? (
-                        <Link
-                          key={item.id}
-                          href={`/courses/${courseSlug}/item/${item.id}`}
-                          className="flex items-center justify-between gap-2 py-2 px-3 rounded-lg bg-stone-50 hover:bg-teal-50 hover:border-teal-200 border border-transparent transition-colors group"
-                        >
+                    {mod.items.map((item, itemIdx) => {
+                      const isFirstItem = idx === 0 && itemIdx === 0;
+                      const showAsLink = canOpenItems || isFirstItem;
+                      const itemHref = canOpenItems
+                        ? `/courses/${courseSlug}/item/${item.id}`
+                        : isFirstItem
+                          ? `/login?returnUrl=${encodeURIComponent(`/courses/${courseSlug}/item/${item.id}`)}`
+                          : null;
+                      const itemContent = (
+                        <>
                           <div className="flex items-center gap-2 min-w-0">
                             {item.type === 'Quiz' ? (
                               <HelpCircle className="w-4 h-4 text-amber-600 shrink-0" />
@@ -83,7 +86,7 @@ export function CourseCurriculum({
                             ) : (
                               <FileText className="w-4 h-4 text-stone-500 shrink-0" />
                             )}
-                            <span className="text-sm font-medium text-stone-800 truncate group-hover:text-teal-800">
+                            <span className={`text-sm font-medium truncate ${showAsLink ? 'text-stone-800 group-hover:text-teal-800' : 'text-stone-800'}`}>
                               {item.title}
                             </span>
                             {item.type === 'Quiz' && item.questionCount != null && (
@@ -92,34 +95,33 @@ export function CourseCurriculum({
                               </span>
                             )}
                           </div>
-                          <ChevronRight className="w-4 h-4 text-stone-400 shrink-0 group-hover:text-teal-600" />
-                        </Link>
-                      ) : (
+                          {showAsLink ? (
+                            <ChevronRight className="w-4 h-4 text-stone-400 shrink-0 group-hover:text-teal-600" />
+                          ) : (
+                            <Lock className="w-4 h-4 text-stone-400 shrink-0" />
+                          )}
+                        </>
+                      );
+                      if (showAsLink && itemHref) {
+                        return (
+                          <Link
+                            key={item.id}
+                            href={itemHref}
+                            className="flex items-center justify-between gap-2 py-2 px-3 rounded-lg bg-stone-50 hover:bg-teal-50 hover:border-teal-200 border border-transparent transition-colors group"
+                          >
+                            {itemContent}
+                          </Link>
+                        );
+                      }
+                      return (
                         <div
                           key={item.id}
                           className="flex items-center justify-between gap-2 py-2 px-3 rounded-lg bg-stone-50"
                         >
-                          <div className="flex items-center gap-2 min-w-0">
-                            {item.type === 'Quiz' ? (
-                              <HelpCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                            ) : item.type === 'Video' ? (
-                              <Video className="w-4 h-4 text-teal-600 shrink-0" />
-                            ) : (
-                              <FileText className="w-4 h-4 text-stone-500 shrink-0" />
-                            )}
-                            <span className="text-sm font-medium text-stone-800 truncate">
-                              {item.title}
-                            </span>
-                            {item.type === 'Quiz' && item.questionCount != null && (
-                              <span className="text-xs text-stone-400">
-                                {item.questionCount} soru
-                              </span>
-                            )}
-                          </div>
-                          <Lock className="w-4 h-4 text-stone-400 shrink-0" />
+                          {itemContent}
                         </div>
-                      )
-                    )}
+                      );
+                    })}
                   </div>
                 )}
               </div>

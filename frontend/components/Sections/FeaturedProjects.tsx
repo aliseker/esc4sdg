@@ -1,6 +1,7 @@
 'use client';
 
 import { MapPin, ArrowRight, Layers, Sparkles } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import AnimateInView from '@/components/UI/AnimateInView';
 import { projects, type Project } from '@/lib/projects';
@@ -9,7 +10,13 @@ const featuredProjects = projects.slice(0, 3);
 
 /** Featured hero project - spans 2 cols, gradient */
 const FeaturedProjectCard = ({ project, delay = 0 }: { project: Project; delay?: number }) => {
+  const t = useTranslations('projects');
+  const tList = useTranslations('projectsList');
   const Icon = project.icon;
+  const id = project.id as 1 | 2 | 3 | 4 | 5;
+  const title = tList(`project${id}Title`);
+  const description = tList(`project${id}Description`);
+  const location = tList(`project${id}Location`);
   return (
     <AnimateInView animation="fade-up" delay={delay} className="sm:col-span-2">
       <Link href={`/proje/${project.id}`} className="block h-full">
@@ -22,18 +29,18 @@ const FeaturedProjectCard = ({ project, delay = 0 }: { project: Project; delay?:
           <div className="flex-1 p-8 sm:p-10 flex flex-col justify-center relative">
             <span className="inline-flex items-center gap-1.5 text-amber-100 text-sm font-bold mb-4">
               <Sparkles className="w-4 h-4" />
-              Öne Çıkan Proje
+              {t('featuredBadge')}
             </span>
             <h3 className="text-2xl sm:text-3xl font-black text-white mb-2 leading-tight group-hover:text-amber-50 transition-colors">
-              {project.title}
+              {title}
             </h3>
-            <p className="text-orange-100/90 text-sm mb-6 line-clamp-2">{project.description}</p>
+            <p className="text-orange-100/90 text-sm mb-6 line-clamp-2">{description}</p>
             <div className="flex items-center gap-2 text-white/80 text-sm mb-6">
               <MapPin className="w-4 h-4" />
-              {project.location} · {project.date}
+              {location} · {project.date}
             </div>
             <span className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white text-orange-700 font-bold text-sm w-fit group-hover:bg-amber-100 group-hover:text-orange-800 transition-colors shadow-lg">
-              Detayları İncele
+              {t('viewDetails')}
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </span>
           </div>
@@ -47,7 +54,14 @@ const FeaturedProjectCard = ({ project, delay = 0 }: { project: Project; delay?:
 const ProjectCard = ({ project, delay = 0, themeIndex = 0 }: {
   project: Project; delay?: number; themeIndex?: number;
 }) => {
+  const t = useTranslations('projects');
+  const tList = useTranslations('projectsList');
   const Icon = project.icon;
+  const id = project.id as 1 | 2 | 3 | 4 | 5;
+  const title = tList(`project${id}Title`);
+  const description = tList(`project${id}Description`);
+  const location = tList(`project${id}Location`);
+  const category = tList(`project${id}Category`);
   const gradients = [
     'from-teal-500 via-emerald-500 to-teal-600',
     'from-violet-500 via-purple-500 to-violet-600',
@@ -65,21 +79,21 @@ const ProjectCard = ({ project, delay = 0, themeIndex = 0 }: {
               <Icon className="w-7 h-7 text-white" />
             </div>
             <span className="inline-block px-3 py-1 rounded-lg bg-white/20 text-white text-xs font-bold mb-4">
-              {project.category}
+              {category}
             </span>
             <h3 className="text-xl font-bold text-white mb-2 group-hover:text-amber-100 transition-colors leading-tight line-clamp-2">
-              {project.title}
+              {title}
             </h3>
             <p className="text-white/85 text-sm mb-5 line-clamp-3 leading-relaxed">
-              {project.description}
+              {description}
             </p>
             <div className="flex items-center gap-2 text-white/80 text-sm mb-5">
               <MapPin className="w-4 h-4 shrink-0" />
-              {project.location} · {project.date}
+              {location} · {project.date}
             </div>
           </div>
           <span className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-white/20 backdrop-blur-sm text-white font-bold text-sm w-fit group-hover:bg-white/30 transition-colors">
-            Detaylar
+            {t('details')}
             <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
           </span>
         </div>
@@ -89,6 +103,7 @@ const ProjectCard = ({ project, delay = 0, themeIndex = 0 }: {
 };
 
 const FeaturedProjects = () => {
+  const t = useTranslations('projects');
   const [featured, ...rest] = featuredProjects;
 
   return (
@@ -103,13 +118,13 @@ const FeaturedProjects = () => {
         <AnimateInView animation="fade-up" className="text-center mb-10">
           <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-100 text-orange-700 text-sm font-bold mb-6">
             <Layers className="w-4 h-4" />
-            Aktif Projeler
+            {t('title')}
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-stone-900 mb-4 tracking-tight">
-            Öne çıkan <span className="bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">projeler</span>
+            {t('sectionHeadingPrefix')} <span className="bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">{t('sectionHeadingHighlight')}</span>
           </h2>
           <p className="text-lg text-stone-600 max-w-2xl mx-auto font-medium">
-            Sürdürülebilir kalkınma hedeflerine ulaşmak için yürüttüğümüz yenilikçi projeler.
+            {t('subtitle')}
           </p>
         </AnimateInView>
 
@@ -124,7 +139,7 @@ const FeaturedProjects = () => {
             href="/proje"
             className="group inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-500 text-white rounded-2xl font-bold hover:from-orange-600 hover:via-amber-600 hover:to-orange-600 transition-all shadow-xl shadow-orange-500/30 hover:shadow-orange-500/40 hover:-translate-y-0.5"
           >
-            Tüm Projeleri Görüntüle
+            {t('viewAll')}
             <ArrowRight className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </AnimateInView>

@@ -1,6 +1,7 @@
 using System.IO;
 using backend.Api.Data;
 using backend.Api.Entities;
+using backend.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -103,7 +104,7 @@ public sealed class AdminCoursesController : ControllerBase
             course.HasCertificate,
             course.CreatedAt,
             course.UpdatedAt,
-            Translations = course.Translations.Select(t => new { t.LanguageId, t.Title, t.Summary }),
+            Translations = course.Translations.Select(t => new { t.LanguageId, t.Title, t.Summary, Category = t.Category ?? course.Category, Level = t.Level ?? course.Level }),
             Modules = course.Modules.Select(m => new
             {
                 m.Id,
@@ -132,9 +133,11 @@ public sealed class AdminCoursesController : ControllerBase
     {
         if (input == null)
             return BadRequest(new { message = "Request body is missing or invalid." });
-        var slug = (input.Slug ?? "").Trim().ToLowerInvariant().Replace(" ", "-");
+        var slug = InputSanitizer.SanitizeSlug(input.Slug, 200);
         if (string.IsNullOrEmpty(slug))
             return BadRequest(new { message = "Slug is required." });
+        if (InputSanitizer.ContainsDangerousChars(input.Category) || InputSanitizer.ContainsDangerousChars(input.Level))
+            return BadRequest(new { message = "Geçersiz karakter içeriyor." });
         if (await _context.Courses.AnyAsync(c => c.Slug == slug, cancellationToken))
             return Conflict(new { message = "Bu slug zaten kullanılıyor. Farklı bir slug deneyin." });
 
@@ -154,9 +157,28 @@ public sealed class AdminCoursesController : ControllerBase
         _context.Courses.Add(course);
         await _context.SaveChangesAsync(cancellationToken);
 
-        if (input.Translations != null)
+        if (input.Translations != null && input.Translations.Count > 0)
+        {
+            var firstT = input.Translations[0];
+            if (string.IsNullOrWhiteSpace(course.Category)) course.Category = string.IsNullOrWhiteSpace(firstT.Category) ? null : firstT.Category.Trim();
+            if (string.IsNullOrWhiteSpace(course.Level)) course.Level = string.IsNullOrWhiteSpace(firstT.Level) ? null : firstT.Level.Trim();
             foreach (var t in input.Translations)
-                _context.CourseTranslations.Add(new CourseTranslation { CourseId = course.Id, LanguageId = t.LanguageId, Title = t.Title, Summary = t.Summary });
+            {
+                if (InputSanitizer.ContainsDangerousChars(t.Title) || InputSanitizer.ContainsDangerousChars(t.Summary))
+                    return BadRequest(new { message = "Başlık veya özet geçersiz karakter içeriyor." });
+                if (InputSanitizer.ContainsDangerousChars(t.Category) || InputSanitizer.ContainsDangerousChars(t.Level))
+                    return BadRequest(new { message = "Geçersiz karakter içeriyor." });
+                _context.CourseTranslations.Add(new CourseTranslation
+                {
+                    CourseId = course.Id,
+                    LanguageId = t.LanguageId,
+                    Title = t.Title,
+                    Summary = t.Summary,
+                    Category = string.IsNullOrWhiteSpace(t.Category) ? null : t.Category.Trim(),
+                    Level = string.IsNullOrWhiteSpace(t.Level) ? null : t.Level.Trim()
+                });
+            }
+        }
 
         if (input.Modules != null)
         {
@@ -212,13 +234,14 @@ public sealed class AdminCoursesController : ControllerBase
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
         if (course == null) return NotFound();
 
-        var slug = input.Slug.Trim().ToLowerInvariant().Replace(" ", "-");
+        var slug = InputSanitizer.SanitizeSlug(input.Slug, 200);
+        if (string.IsNullOrEmpty(slug)) return BadRequest(new { message = "Slug is required." });
+        if (InputSanitizer.ContainsDangerousChars(input.Category) || InputSanitizer.ContainsDangerousChars(input.Level))
+            return BadRequest(new { message = "Geçersiz karakter içeriyor." });
         if (slug != course.Slug && await _context.Courses.AnyAsync(c => c.Slug == slug, cancellationToken))
             return Conflict("Slug already exists.");
 
         course.Slug = slug;
-        course.Category = string.IsNullOrWhiteSpace(input.Category) ? null : input.Category.Trim();
-        course.Level = string.IsNullOrWhiteSpace(input.Level) ? null : input.Level.Trim();
         course.DurationMinutes = ComputeDurationMinutes(input);
         course.InstructorName = null;
         course.ImageUrl = string.IsNullOrWhiteSpace(input.ImageUrl) ? null : input.ImageUrl.Trim();
@@ -226,9 +249,26 @@ public sealed class AdminCoursesController : ControllerBase
         course.UpdatedAt = DateTime.UtcNow;
 
         _context.CourseTranslations.RemoveRange(course.Translations);
-        if (input.Translations != null)
+        if (input.Translations != null && input.Translations.Count > 0)
+        {
+            var firstT = input.Translations[0];
+            course.Category = string.IsNullOrWhiteSpace(firstT.Category) ? null : firstT.Category.Trim();
+            course.Level = string.IsNullOrWhiteSpace(firstT.Level) ? null : firstT.Level.Trim();
             foreach (var t in input.Translations)
-                _context.CourseTranslations.Add(new CourseTranslation { CourseId = course.Id, LanguageId = t.LanguageId, Title = t.Title, Summary = t.Summary });
+            {
+                if (InputSanitizer.ContainsDangerousChars(t.Category) || InputSanitizer.ContainsDangerousChars(t.Level))
+                    return BadRequest(new { message = "Geçersiz karakter içeriyor." });
+                _context.CourseTranslations.Add(new CourseTranslation
+                {
+                    CourseId = course.Id,
+                    LanguageId = t.LanguageId,
+                    Title = t.Title,
+                    Summary = t.Summary,
+                    Category = string.IsNullOrWhiteSpace(t.Category) ? null : t.Category.Trim(),
+                    Level = string.IsNullOrWhiteSpace(t.Level) ? null : t.Level.Trim()
+                });
+            }
+        }
 
         foreach (var mod in course.Modules.ToList())
         {
@@ -277,6 +317,7 @@ public sealed class AdminCoursesController : ControllerBase
     }
 
     private static readonly string[] AllowedImageExtensions = { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+    private static readonly string[] AllowedMaterialExtensions = { ".pdf", ".zip", ".rar", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".jpg", ".jpeg", ".png", ".webp", ".gif" };
 
     [HttpPost("upload-cover")]
     public async Task<IActionResult> UploadCover(IFormFile? file, CancellationToken cancellationToken)
@@ -294,6 +335,31 @@ public sealed class AdminCoursesController : ControllerBase
         await using (var stream = new FileStream(fullPath, FileMode.Create))
             await file.CopyToAsync(stream, cancellationToken);
         var url = "/uploads/courses/" + fileName;
+        return Ok(new { url });
+    }
+
+
+
+    [HttpPost("upload-material-v2")]
+    public async Task<IActionResult> UploadMaterial(IFormFile? file, CancellationToken cancellationToken)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { message = "Dosya seçilmedi." });
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (string.IsNullOrEmpty(ext) || !AllowedMaterialExtensions.Contains(ext))
+            return BadRequest(new { message = "Geçersiz dosya türü. Sadece PDF ve ofis belgeleri yüklenebilir." });
+        
+        var webRoot = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
+        var uploadDir = Path.Combine(webRoot, "uploads", "materials");
+        Directory.CreateDirectory(uploadDir);
+        
+        var fileName = $"{Guid.NewGuid():N}{ext}";
+        var fullPath = Path.Combine(uploadDir, fileName);
+        
+        await using (var stream = new FileStream(fullPath, FileMode.Create))
+            await file.CopyToAsync(stream, cancellationToken);
+            
+        var url = "/uploads/materials/" + fileName;
         return Ok(new { url });
     }
 
@@ -379,6 +445,8 @@ public sealed class AdminCoursesController : ControllerBase
         public int LanguageId { get; set; }
         public string Title { get; set; } = "";
         public string? Summary { get; set; }
+        public string? Category { get; set; }
+        public string? Level { get; set; }
     }
 
     public class ModuleInput

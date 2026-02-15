@@ -61,8 +61,13 @@ export default function RegisterPage() {
       {/* Sol panel – sadece lg+ */}
       <div className="hidden lg:flex lg:w-[44%] xl:w-[42%] flex-col justify-between bg-gradient-to-br from-teal-600 to-teal-700 p-12 xl:p-16">
         <Link href="/" className="flex items-center gap-2.5 text-white/90 hover:text-white transition-colors">
-          <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center font-bold text-sm">
-            E4
+          <div className="w-12 h-12 bg-white/20 rounded-lg overflow-hidden flex items-center justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/logo.jpeg"
+              alt="Escape4SDG"
+              className="w-full h-full object-cover"
+            />
           </div>
           <span className="font-bold text-lg tracking-tight">Escape4SDG</span>
         </Link>

@@ -1,14 +1,11 @@
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import {
-  ArrowLeft,
   ArrowRight,
   Target,
   Award,
   Sparkles,
-  BookOpen,
-  Puzzle,
-  Zap,
+
   MapPin,
   GraduationCap,
   Layers,
@@ -26,23 +23,24 @@ export async function generateMetadata() {
 
 export default async function ProjePage() {
   const t = await getTranslations('projects');
+  const tList = await getTranslations('projectsList');
 
   const objectives = [t('objectives.0'), t('objectives.1'), t('objectives.2')];
   const results = [t('results.0'), t('results.1'), t('results.2'), t('results.3'), t('results.4')];
 
-  const cards = [
-    { icon: BookOpen, title: t('moocCardTitle'), desc: t('moocCardDesc'), gradient: 'from-teal-500 via-emerald-500 to-teal-600', shadow: 'shadow-teal-500/30', href: '/courses' },
-    { icon: Puzzle, title: t('escapeCardTitle'), desc: t('escapeCardDesc'), gradient: 'from-orange-500 via-amber-500 to-orange-600', shadow: 'shadow-orange-500/30', href: '/courses' },
-    { icon: Zap, title: t('hubCardTitle'), desc: t('hubCardDesc'), gradient: 'from-violet-500 via-purple-500 to-violet-600', shadow: 'shadow-violet-500/30', href: '/courses' },
-  ];
+
 
   const [featured, ...restProjects] = projects;
   const FeaturedIcon = featured.icon;
+  const id = featured.id as 1 | 2 | 3 | 4 | 5;
+  const featuredTitle = tList(`project${id}Title`);
+  const featuredDescription = tList(`project${id}Description`);
+  const featuredLocation = tList(`project${id}Location`);
 
   return (
     <div className="min-h-screen bg-stone-50 overflow-hidden">
       {/* Hero - Orange/Amber gradient (project-focused like Ecceludus) */}
-      <section className="relative min-h-[65vh] flex items-center pt-20 pb-16 overflow-hidden">
+      <section className="relative min-h-[65vh] flex items-center pt-20 pb-8 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-orange-500 via-amber-500 to-orange-600" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_20%_120%,rgba(251,146,60,0.4),transparent)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_-10%,rgba(168,85,247,0.2),transparent)]" />
@@ -56,15 +54,6 @@ export default async function ProjePage() {
         </div>
 
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <AnimateInView animation="fade-up" delay={0}>
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-white/90 hover:text-white mb-10 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              {t('back')}
-            </Link>
-          </AnimateInView>
           <AnimateInView animation="fade-up" delay={100}>
             <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/20 backdrop-blur-sm text-white text-sm font-bold mb-8 border border-white/20">
               <Sparkles className="w-4 h-4" />
@@ -90,7 +79,7 @@ export default async function ProjePage() {
       </section>
 
       {/* Objectives & Results - Bento (Ecceludus style) */}
-      <section className="relative py-20 lg:py-28">
+      <section className="relative py-10 lg:py-16">
         <div className="absolute inset-0 bg-dots opacity-30" />
         <div className="absolute top-0 left-0 w-96 h-96 bg-orange-200/20 rounded-full blur-3xl -translate-x-1/2" />
         <div className="absolute bottom-0 right-0 w-80 h-80 bg-teal-200/20 rounded-full blur-3xl translate-x-1/2" />
@@ -100,10 +89,10 @@ export default async function ProjePage() {
             <div className="text-center mb-16">
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-100 text-orange-700 text-sm font-bold mb-4">
                 <Target className="w-4 h-4" />
-                Hedefler & Çıktılar
+                {t('objectivesResultsBadge')}
               </span>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-stone-900">
-                Neler Yapıyoruz?
+                {t('whatWeDoTitle')}
               </h2>
             </div>
           </AnimateInView>
@@ -163,52 +152,7 @@ export default async function ProjePage() {
         </div>
       </section>
 
-      {/* Best Results - Ecceludus "The Best Results" cards */}
-      <section className="relative py-20 lg:py-28 bg-gradient-to-b from-stone-100 via-amber-50/30 to-stone-50">
-        <div className="absolute inset-0 bg-grid opacity-20" />
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimateInView animation="fade-up" delay={0}>
-            <div className="text-center mb-16">
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-100 text-violet-700 text-sm font-bold mb-4">
-                <Sparkles className="w-4 h-4" />
-                Projemizin Çıktıları
-              </span>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-stone-900 mb-4">
-                {t('bestResultsTitle')}
-              </h2>
-            </div>
-          </AnimateInView>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-            {cards.map((card, i) => {
-              const Icon = card.icon;
-              return (
-                <AnimateInView key={i} animation="fade-up" delay={i * 150}>
-                  <Link href={card.href}>
-                    <div className={`group relative overflow-hidden rounded-3xl bg-gradient-to-br ${card.gradient} p-8 text-white shadow-2xl ${card.shadow} h-full flex flex-col hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300`}>
-                      <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500" />
-                      <div className="absolute top-1/2 right-4 opacity-10 group-hover:opacity-20">
-                        <Icon className="w-24 h-24" />
-                      </div>
-                      <div className="relative flex-1">
-                        <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                          <Icon className="w-8 h-8 text-white" strokeWidth={2} />
-                        </div>
-                        <h3 className="text-xl font-bold mb-3">{card.title}</h3>
-                        <p className="text-white/85 leading-relaxed">{card.desc}</p>
-                      </div>
-                      <div className="mt-6 flex items-center gap-2 text-white/70 group-hover:text-white transition-colors">
-                        <span className="text-sm font-semibold">{t('cta')}</span>
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      </div>
-                    </div>
-                  </Link>
-                </AnimateInView>
-              );
-            })}
-          </div>
-        </div>
-      </section>
 
       {/* Project cards grid */}
       <section className="relative py-20 lg:py-28">
@@ -243,15 +187,15 @@ export default async function ProjePage() {
                       Öne Çıkan Proje
                     </span>
                     <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-amber-50 transition-colors">
-                      {featured.title}
+                      {featuredTitle}
                     </h3>
-                    <p className="text-orange-100/90 text-sm mb-6 line-clamp-2">{featured.description}</p>
+                    <p className="text-orange-100/90 text-sm mb-6 line-clamp-2">{featuredDescription}</p>
                     <div className="flex items-center gap-2 text-white/80 text-sm mb-6">
                       <MapPin className="w-4 h-4" />
-                      {featured.location} · {featured.date}
+                      {featuredLocation} · {featured.date}
                     </div>
                     <span className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white text-orange-700 font-bold text-sm w-fit group-hover:bg-amber-100 transition-colors shadow-lg">
-                      Detayları İncele
+                      {t('viewDetails')}
                       <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                     </span>
                   </div>
@@ -261,6 +205,11 @@ export default async function ProjePage() {
 
             {restProjects.slice(0, 4).map((project, i) => {
               const Icon = project.icon;
+              const pid = project.id as 1 | 2 | 3 | 4 | 5;
+              const projTitle = tList(`project${pid}Title`);
+              const projDesc = tList(`project${pid}Description`);
+              const projLocation = tList(`project${pid}Location`);
+              const projCategory = tList(`project${pid}Category`);
               const gradients = ['from-teal-500 via-emerald-500 to-teal-600', 'from-violet-500 via-purple-500 to-violet-600'];
               const shadows = ['shadow-teal-500/30', 'shadow-violet-500/30'];
               const gi = i % 2;
@@ -274,21 +223,21 @@ export default async function ProjePage() {
                           <Icon className="w-7 h-7 text-white" />
                         </div>
                         <span className="inline-block px-3 py-1 rounded-lg bg-white/20 text-white text-xs font-bold mb-3">
-                          {project.category}
+                          {projCategory}
                         </span>
                         <h3 className="text-lg font-bold text-white mb-2 line-clamp-2 group-hover:text-amber-100 transition-colors">
-                          {project.title}
+                          {projTitle}
                         </h3>
                         <p className="text-white/85 text-sm mb-5 line-clamp-2 leading-relaxed">
-                          {project.description}
+                          {projDesc}
                         </p>
                         <div className="flex items-center gap-2 text-white/80 text-sm">
                           <MapPin className="w-4 h-4 shrink-0" />
-                          {project.location} · {project.date}
+                          {projLocation} · {project.date}
                         </div>
                       </div>
                       <span className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-white/20 text-white font-bold text-sm w-fit mt-4 group-hover:bg-white/30 transition-colors">
-                        Detaylar
+                        {t('details')}
                         <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                       </span>
                     </div>

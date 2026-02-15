@@ -170,6 +170,14 @@ namespace backend.Api.Migrations
                     b.Property<int>("LanguageId")
                         .HasColumnType("int");
 
+                    b.Property<string>("Category")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Level")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<string>("Summary")
                         .HasColumnType("nvarchar(max)");
 
@@ -321,12 +329,16 @@ namespace backend.Api.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LogoPosition")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("LogoUrl")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -369,6 +381,115 @@ namespace backend.Api.Migrations
                     b.HasIndex("LanguageId");
 
                     b.ToTable("PartnerTranslations");
+                });
+
+            modelBuilder.Entity("backend.Api.Entities.Project", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CoverImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.ToTable("Projects");
+                });
+
+            modelBuilder.Entity("backend.Api.Entities.ProjectGalleryImage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Caption")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("ProjectGalleryImages");
+                });
+
+            modelBuilder.Entity("backend.Api.Entities.ProjectTranslation", b =>
+                {
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LanguageId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("BodyHtml")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Subtitle")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.HasKey("ProjectId", "LanguageId");
+
+                    b.HasIndex("LanguageId");
+
+                    b.ToTable("ProjectTranslations");
+                });
+
+            modelBuilder.Entity("backend.Api.Entities.SiteTranslation", b =>
+                {
+                    b.Property<int>("LanguageId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Key")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("LanguageId", "Key");
+
+                    b.ToTable("SiteTranslations");
                 });
 
             modelBuilder.Entity("backend.Api.Entities.Role", b =>
@@ -652,6 +773,47 @@ namespace backend.Api.Migrations
                     b.Navigation("Partner");
                 });
 
+            modelBuilder.Entity("backend.Api.Entities.ProjectGalleryImage", b =>
+                {
+                    b.HasOne("backend.Api.Entities.Project", "Project")
+                        .WithMany("GalleryImages")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("backend.Api.Entities.ProjectTranslation", b =>
+                {
+                    b.HasOne("backend.Api.Entities.Language", "Language")
+                        .WithMany()
+                        .HasForeignKey("LanguageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.Api.Entities.Project", "Project")
+                        .WithMany("Translations")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Language");
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("backend.Api.Entities.SiteTranslation", b =>
+                {
+                    b.HasOne("backend.Api.Entities.Language", "Language")
+                        .WithMany()
+                        .HasForeignKey("LanguageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Language");
+                });
+
             modelBuilder.Entity("backend.Api.Entities.User", b =>
                 {
                     b.HasOne("backend.Api.Entities.Role", "Role")
@@ -722,6 +884,13 @@ namespace backend.Api.Migrations
 
             modelBuilder.Entity("backend.Api.Entities.Partner", b =>
                 {
+                    b.Navigation("Translations");
+                });
+
+            modelBuilder.Entity("backend.Api.Entities.Project", b =>
+                {
+                    b.Navigation("GalleryImages");
+
                     b.Navigation("Translations");
                 });
 

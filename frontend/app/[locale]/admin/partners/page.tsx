@@ -13,6 +13,7 @@ import {
 } from '@/lib/adminApi';
 import { API_BASE } from '@/lib/adminApi';
 import { Plus, Pencil, Trash2, ImagePlus } from 'lucide-react';
+import { LogoCircleSelector } from '@/components/Admin/LogoCircleSelector';
 
 export default function AdminPartnersPage() {
   const [list, setList] = useState<Partner[]>([]);
@@ -26,6 +27,7 @@ export default function AdminPartnersPage() {
     country: '',
     website: '',
     logoUrl: '',
+    logoPosition: 'center' as string,
     translations: [] as { languageId: number; description: string }[],
   });
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -52,6 +54,7 @@ export default function AdminPartnersPage() {
       country: '',
       website: '',
       logoUrl: '',
+      logoPosition: 'center',
       translations: languages.map((l) => ({ languageId: l.id, description: '' })),
     });
   };
@@ -64,6 +67,7 @@ export default function AdminPartnersPage() {
       country: p.country ?? '',
       website: p.website ?? '',
       logoUrl: p.logoUrl ?? '',
+      logoPosition: p.logoPosition ?? 'center',
       translations: languages.length
         ? languages.map((l) => ({
             languageId: l.id,
@@ -95,6 +99,7 @@ export default function AdminPartnersPage() {
         country: form.country.trim() || '',
         website: form.website.trim() || undefined,
         logoUrl: form.logoUrl.trim() || undefined,
+        logoPosition: form.logoPosition?.trim() || undefined,
         translations: form.translations.map((t) => ({ languageId: t.languageId, description: t.description?.trim() ?? '' })),
       };
       if (editing) {
@@ -186,18 +191,18 @@ export default function AdminPartnersPage() {
               <div className="flex flex-wrap items-center gap-3">
                 {form.logoUrl ? (
                   <>
-                    <img
-                      src={logoImgSrc(form.logoUrl)}
-                      alt="Logo"
-                      className="h-16 w-auto max-w-[200px] object-contain rounded-lg border border-stone-200 bg-white"
+                    <LogoCircleSelector
+                      imageSrc={logoImgSrc(form.logoUrl)}
+                      value={form.logoPosition || '50% 50%'}
+                      onChange={(position) => setForm((f) => ({ ...f, logoPosition: position }))}
                     />
                     <div className="flex flex-col gap-1">
                       <input
-                        type="url"
+                        type="text"
                         value={form.logoUrl}
                         onChange={(e) => setForm((f) => ({ ...f, logoUrl: e.target.value }))}
                         className="rounded-lg border border-stone-300 px-3 py-2 text-sm w-64"
-                        placeholder="Logo URL veya yükleyin"
+                        placeholder="Yüklenen logo veya URL"
                       />
                       <button
                         type="button"
@@ -222,7 +227,7 @@ export default function AdminPartnersPage() {
                       />
                     </label>
                     <input
-                      type="url"
+                      type="text"
                       value={form.logoUrl}
                       onChange={(e) => setForm((f) => ({ ...f, logoUrl: e.target.value }))}
                       className="rounded-lg border border-stone-300 px-3 py-2 text-sm w-64"

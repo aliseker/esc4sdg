@@ -1,5 +1,6 @@
 using backend.Api.Data;
 using backend.Api.Entities;
+using backend.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -34,9 +35,13 @@ public sealed class AdminLanguagesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] LanguageInput input, CancellationToken cancellationToken)
+    public async Task<IActionResult> Create([FromBody] LanguageInput? input, CancellationToken cancellationToken)
     {
-        var code = input.Code.Trim().ToLowerInvariant();
+        if (input == null) return BadRequest(new { message = "Geçersiz istek." });
+        var code = (input.Code ?? "").Trim().ToLowerInvariant();
+        if (string.IsNullOrEmpty(code)) return BadRequest(new { message = "Kod zorunludur." });
+        if (InputSanitizer.ContainsDangerousChars(code) || InputSanitizer.ContainsDangerousChars(input.Name))
+            return BadRequest(new { message = "Geçersiz karakter içeriyor." });
         if (await _context.Languages.AnyAsync(l => l.Code == code, cancellationToken))
             return Conflict("Language code already exists.");
         var l = new Language
@@ -51,11 +56,14 @@ public sealed class AdminLanguagesController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, [FromBody] LanguageInput input, CancellationToken cancellationToken)
+    public async Task<IActionResult> Update(int id, [FromBody] LanguageInput? input, CancellationToken cancellationToken)
     {
+        if (input == null) return BadRequest(new { message = "Geçersiz istek." });
         var l = await _context.Languages.FindAsync(new object[] { id }, cancellationToken);
         if (l == null) return NotFound();
-        var code = input.Code.Trim().ToLowerInvariant();
+        var code = (input.Code ?? "").Trim().ToLowerInvariant();
+        if (InputSanitizer.ContainsDangerousChars(code) || InputSanitizer.ContainsDangerousChars(input.Name))
+            return BadRequest(new { message = "Geçersiz karakter içeriyor." });
         if (code != l.Code && await _context.Languages.AnyAsync(x => x.Code == code, cancellationToken))
             return Conflict("Language code already exists.");
         l.Code = code;

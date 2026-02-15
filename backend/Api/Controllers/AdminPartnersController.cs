@@ -1,5 +1,6 @@
 using backend.Api.Data;
 using backend.Api.Entities;
+using backend.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -23,25 +24,34 @@ public sealed class AdminPartnersController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
-        var list = await _context.Partners
-            .OrderBy(p => p.SortOrder)
-            .Include(p => p.Translations)
-            .Select(p => new
-            {
-                p.Id,
-                p.Name,
-                p.Country,
-                p.CountryCode,
-                p.Type,
-                p.Website,
-                p.LogoUrl,
-                p.Role,
-                p.SortOrder,
-                p.CreatedAt,
-                Translations = p.Translations.Select(t => new { t.LanguageId, t.Description })
-            })
-            .ToListAsync(cancellationToken);
-        return Ok(list);
+        try
+        {
+            var list = await _context.Partners
+                .OrderBy(p => p.SortOrder)
+                .Include(p => p.Translations)
+                .Select(p => new
+                {
+                    p.Id,
+                    p.Name,
+                    p.Country,
+                    p.CountryCode,
+                    p.Type,
+                    p.Website,
+                    p.LogoUrl,
+                    p.LogoPosition,
+                    p.Role,
+                    p.SortOrder,
+                    p.CreatedAt,
+                    Translations = p.Translations.Select(t => new { t.LanguageId, t.Description })
+                })
+                .ToListAsync(cancellationToken);
+            return Ok(list);
+        }
+        catch (Exception ex)
+        {
+            var msg = ex.InnerException?.Message ?? ex.Message;
+            return StatusCode(500, new { message = "Veritabanı hatası: " + msg });
+        }
     }
 
     [HttpGet("{id:int}")]
@@ -60,6 +70,7 @@ public sealed class AdminPartnersController : ControllerBase
             p.Type,
             p.Website,
             p.LogoUrl,
+            p.LogoPosition,
             p.Role,
             p.SortOrder,
             p.CreatedAt,
@@ -70,48 +81,88 @@ public sealed class AdminPartnersController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] PartnerInput input, CancellationToken cancellationToken)
     {
-        var maxOrder = await _context.Partners.Select(x => x.SortOrder).DefaultIfEmpty(-1).MaxAsync(cancellationToken);
-        var p = new Partner
+        try
         {
-            Name = input.Name.Trim(),
-            Country = string.IsNullOrWhiteSpace(input.Country) ? "" : input.Country.Trim(),
-            CountryCode = null,
-            Type = null,
-            Website = string.IsNullOrWhiteSpace(input.Website) ? null : input.Website.Trim(),
-            LogoUrl = string.IsNullOrWhiteSpace(input.LogoUrl) ? null : input.LogoUrl.Trim(),
-            Role = null,
-            SortOrder = maxOrder + 1,
-            CreatedAt = DateTime.UtcNow
-        };
-        _context.Partners.Add(p);
-        await _context.SaveChangesAsync(cancellationToken);
-        if (input.Translations != null)
-        {
-            foreach (var t in input.Translations)
+            if (input == null) return BadRequest(new { message = "Geçersiz istek." });
+            var name = (input.Name ?? "").Trim();
+            if (string.IsNullOrEmpty(name)) return BadRequest(new { message = "Ad zorunludur." });
+            if (InputSanitizer.ContainsDangerousChars(name) || InputSanitizer.ContainsDangerousChars(input.Country)
+                || InputSanitizer.ContainsDangerousChars(input.Website) || InputSanitizer.ContainsDangerousChars(input.LogoUrl))
+                return BadRequest(new { message = "Geçersiz karakter içeriyor." });
+            if (input.Website != null && !string.IsNullOrWhiteSpace(input.Website) && !InputSanitizer.IsValidUrl(input.Website.Trim()))
+                return BadRequest(new { message = "Web sitesi URL http veya https ile başlamalı." });
+
+            var maxOrder = await _context.Partners.AnyAsync(cancellationToken)
+                ? await _context.Partners.MaxAsync(x => x.SortOrder, cancellationToken)
+                : -1;
+
+            var p = new Partner
             {
-                _context.PartnerTranslations.Add(new PartnerTranslation { PartnerId = p.Id, LanguageId = t.LanguageId, Description = t.Description });
-            }
+                Name = (input.Name ?? "").Trim(),
+                Country = string.IsNullOrWhiteSpace(input.Country) ? "" : (input.Country ?? "").Trim(),
+                CountryCode = null,
+                Type = null,
+                Website = string.IsNullOrWhiteSpace(input.Website) ? null : input.Website.Trim(),
+                LogoUrl = string.IsNullOrWhiteSpace(input.LogoUrl) ? null : input.LogoUrl.Trim(),
+                LogoPosition = string.IsNullOrWhiteSpace(input.LogoPosition) ? null : input.LogoPosition.Trim(),
+                Role = null,
+                SortOrder = maxOrder + 1,
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.Partners.Add(p);
             await _context.SaveChangesAsync(cancellationToken);
+
+            if (input.Translations != null && input.Translations.Count > 0)
+            {
+                var validLanguageIds = await _context.Languages.Select(l => l.Id).ToListAsync(cancellationToken);
+                foreach (var t in input.Translations)
+                {
+                    if (!validLanguageIds.Contains(t.LanguageId)) continue;
+                    if (InputSanitizer.ContainsDangerousChars(t.Description))
+                        return BadRequest(new { message = "Açıklamada geçersiz karakter var." });
+                    _context.PartnerTranslations.Add(new PartnerTranslation { PartnerId = p.Id, LanguageId = t.LanguageId, Description = t.Description ?? "" });
+                }
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            return CreatedAtAction(nameof(Get), new { id = p.Id }, new { id = p.Id });
         }
-        return CreatedAtAction(nameof(Get), new { id = p.Id }, new { id = p.Id });
+        catch (Exception ex)
+        {
+            var msg = ex.InnerException?.Message ?? ex.Message;
+            System.Console.WriteLine("[AdminPartners Create] " + ex.ToString());
+            return StatusCode(500, new { message = "Ortak eklenirken hata: " + msg });
+        }
     }
 
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] PartnerInput input, CancellationToken cancellationToken)
     {
+        if (input == null) return BadRequest(new { message = "Geçersiz istek." });
         var p = await _context.Partners.Include(x => x.Translations).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (p == null) return NotFound();
+        if (InputSanitizer.ContainsDangerousChars(input.Name) || InputSanitizer.ContainsDangerousChars(input.Country)
+            || InputSanitizer.ContainsDangerousChars(input.Website) || InputSanitizer.ContainsDangerousChars(input.LogoUrl))
+            return BadRequest(new { message = "Geçersiz karakter içeriyor." });
+        if (input.Website != null && !string.IsNullOrWhiteSpace(input.Website) && !InputSanitizer.IsValidUrl(input.Website.Trim()))
+            return BadRequest(new { message = "Web sitesi URL http veya https ile başlamalı." });
         p.Name = input.Name.Trim();
         p.Country = string.IsNullOrWhiteSpace(input.Country) ? "" : input.Country.Trim();
         p.CountryCode = null;
         p.Type = null;
         p.Website = string.IsNullOrWhiteSpace(input.Website) ? null : input.Website.Trim();
         p.LogoUrl = string.IsNullOrWhiteSpace(input.LogoUrl) ? null : input.LogoUrl.Trim();
+        p.LogoPosition = string.IsNullOrWhiteSpace(input.LogoPosition) ? null : input.LogoPosition.Trim();
         p.Role = null;
         _context.PartnerTranslations.RemoveRange(p.Translations);
         if (input.Translations != null)
+        {
             foreach (var t in input.Translations)
+            {
+                if (InputSanitizer.ContainsDangerousChars(t.Description))
+                    return BadRequest(new { message = "Açıklamada geçersiz karakter var." });
                 _context.PartnerTranslations.Add(new PartnerTranslation { PartnerId = p.Id, LanguageId = t.LanguageId, Description = t.Description });
+            }
+        }
         await _context.SaveChangesAsync(cancellationToken);
         return Ok(new { id = p.Id });
     }
@@ -155,6 +206,7 @@ public sealed class AdminPartnersController : ControllerBase
         public string? Type { get; set; }
         public string? Website { get; set; }
         public string? LogoUrl { get; set; }
+        public string? LogoPosition { get; set; }
         public string? Role { get; set; }
         public int SortOrder { get; set; }
         public List<TranslationInput>? Translations { get; set; }

@@ -38,7 +38,7 @@ export function SocialLinks({ variant = 'footer', initialLinks }: Props) {
     if (initialLinks === undefined) {
       getSocialLinks().then(setLinks);
     } else {
-      setLinks(initialLinks);
+      setLinks(initialLinks ?? []);
     }
   }, [initialLinks]);
 

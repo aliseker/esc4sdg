@@ -16,6 +16,9 @@ public sealed class PartnersController : ControllerBase
     public async Task<IActionResult> GetList([FromQuery] string? lang, CancellationToken cancellationToken)
     {
         var languageId = await ResolveLanguageIdAsync(lang ?? "tr", cancellationToken);
+        var enId = await GetLanguageIdByCodeAsync("en", cancellationToken);
+        var trId = await GetLanguageIdByCodeAsync("tr", cancellationToken);
+
         var list = await _context.Partners
             .OrderBy(p => p.SortOrder)
             .Include(p => p.Translations)
@@ -26,7 +29,11 @@ public sealed class PartnersController : ControllerBase
                 p.Country,
                 p.Website,
                 p.LogoUrl,
-                Description = p.Translations.Where(t => t.LanguageId == languageId).Select(t => t.Description).FirstOrDefault()
+                p.LogoPosition,
+                Description = p.Translations.FirstOrDefault(t => t.LanguageId == languageId).Description
+                              ?? p.Translations.FirstOrDefault(t => t.LanguageId == enId).Description
+                              ?? p.Translations.FirstOrDefault(t => t.LanguageId == trId).Description
+                              ?? p.Translations.FirstOrDefault().Description
             })
             .ToListAsync(cancellationToken);
         return Ok(list);
@@ -36,5 +43,11 @@ public sealed class PartnersController : ControllerBase
     {
         var language = await _context.Languages.FirstOrDefaultAsync(l => l.Code == code, ct);
         return language?.Id ?? await _context.Languages.OrderBy(l => l.SortOrder).Select(l => l.Id).FirstAsync(ct);
+    }
+
+    private async Task<int?> GetLanguageIdByCodeAsync(string code, CancellationToken ct)
+    {
+        var language = await _context.Languages.FirstOrDefaultAsync(l => l.Code == code, ct);
+        return language?.Id;
     }
 }
