@@ -13,7 +13,9 @@ import {
   adminCourseUpdate,
   adminUploadCourseCover,
   adminUploadCourseMaterial,
+
   adminDeleteCourseCover,
+  adminSiteTranslationsGet,
   API_BASE,
   type Language,
   type AdminCourseFull,
@@ -62,16 +64,20 @@ export function AdminCourseEditClient({ id }: { id: number }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [slug, setSlug] = useState('');
-  const [category, setCategory] = useState('');
-  const [level, setLevel] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [coverUploading, setCoverUploading] = useState(false);
   const [coverDeleting, setCoverDeleting] = useState(false);
   const [activeLangId, setActiveLangId] = useState<number | null>(null);
-  const [courseTranslations, setCourseTranslations] = useState<{ languageId: number; title: string; summary: string }[]>([]);
+  const [courseTranslations, setCourseTranslations] = useState<{ languageId: number; title: string; summary: string; category: string; level: string }[]>([]);
   const [modules, setModules] = useState<ModuleForm[]>([]);
+
   const [addItemModuleIdx, setAddItemModuleIdx] = useState<number | null>(null);
   const [uploadingItem, setUploadingItem] = useState<{ modIdx: number; itemIdx: number } | null>(null);
+  const [levelLabels, setLevelLabels] = useState<Record<string, string>>({
+    Beginner: 'Beginner',
+    Intermediate: 'Intermediate',
+    Advanced: 'Advanced',
+  });
 
   useEffect(() => {
     if (!id || isNaN(id)) {
@@ -83,13 +89,17 @@ export function AdminCourseEditClient({ id }: { id: number }) {
         setLanguages(langs);
         setCourse(c);
         setSlug(c.slug);
-        setCategory(c.category ?? '');
-        setLevel(c.level ?? '');
         setImageUrl(c.imageUrl ?? '');
         setCourseTranslations(
           langs.map((l) => {
             const t = c.translations?.find((x) => x.languageId === l.id);
-            return { languageId: l.id, title: t?.title ?? '', summary: t?.summary ?? '' };
+            return {
+              languageId: l.id,
+              title: t?.title ?? '',
+              summary: t?.summary ?? '',
+              category: t?.category ?? '',
+              level: t?.level ?? 'Beginner'
+            };
           })
         );
         setModules(
@@ -120,9 +130,30 @@ export function AdminCourseEditClient({ id }: { id: number }) {
         );
         if (langs.length > 0) setActiveLangId(langs[0].id);
       })
+
       .catch((err) => setError(err instanceof Error ? err.message : 'Yüklenemedi'))
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (activeLangId) {
+      adminSiteTranslationsGet(activeLangId)
+        .then((data) => {
+          const newLabels: Record<string, string> = {
+            Beginner: 'Beginner',
+            Intermediate: 'Intermediate',
+            Advanced: 'Advanced',
+          };
+          data.items.forEach((item) => {
+            if (item.key === 'courses.level_beginner' && item.value?.trim()) newLabels.Beginner = item.value;
+            if (item.key === 'courses.level_intermediate' && item.value?.trim()) newLabels.Intermediate = item.value;
+            if (item.key === 'courses.level_advanced' && item.value?.trim()) newLabels.Advanced = item.value;
+          });
+          setLevelLabels(newLabels);
+        })
+        .catch((err) => console.error('Translation fetch error:', err));
+    }
+  }, [activeLangId]);
 
   const addModule = () => {
     setModules((m) => [
@@ -193,12 +224,16 @@ export function AdminCourseEditClient({ id }: { id: number }) {
 
   const buildPayload = (): AdminCoursePayload => ({
     slug: slug.trim() || 'kurs',
-    category: category.trim() || undefined,
-    level: level.trim() || undefined,
     durationMinutes: 0,
     imageUrl: imageUrl.trim() || undefined,
     hasCertificate: true,
-    translations: courseTranslations.map((t) => ({ languageId: t.languageId, title: t.title, summary: t.summary })),
+    translations: courseTranslations.map((t) => ({
+      languageId: t.languageId,
+      title: t.title,
+      summary: t.summary,
+      category: t.category?.trim() || undefined,
+      level: t.level?.trim() || undefined
+    })),
     modules: modules.map((mod, i) => ({
       sortOrder: i,
       translations: mod.translations.map((t) => ({ languageId: t.languageId, title: t.title, description: t.description })),
@@ -241,7 +276,7 @@ export function AdminCourseEditClient({ id }: { id: number }) {
   }
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="max-w-6xl space-y-6">
       <div className="flex items-center gap-4">
         <Link href="/admin/courses" className="p-2 rounded-lg hover:bg-stone-100">
           <ArrowLeft className="w-5 h-5" />
@@ -288,22 +323,33 @@ export function AdminCourseEditClient({ id }: { id: number }) {
               />
             </label>
             <label>
-              <span className="text-sm text-stone-600">Kategori</span>
+              <span className="text-sm text-stone-600">Kategori {activeLangId && `(${languages.find(l => l.id === activeLangId)?.code})`}</span>
               <input
                 type="text"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                value={activeLangId ? courseTranslations.find(t => t.languageId === activeLangId)?.category || '' : ''}
+                onChange={(e) => {
+                  if (activeLangId) {
+                    setCourseTranslations(prev => prev.map(t => t.languageId === activeLangId ? { ...t, category: e.target.value } : t));
+                  }
+                }}
                 className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"
               />
             </label>
             <label>
-              <span className="text-sm text-stone-600">Seviye</span>
-              <input
-                type="text"
-                value={level}
-                onChange={(e) => setLevel(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"
-              />
+              <span className="text-sm text-stone-600">Seviye {activeLangId && `(${languages.find(l => l.id === activeLangId)?.code})`}</span>
+              <select
+                value={activeLangId ? courseTranslations.find(t => t.languageId === activeLangId)?.level || 'Beginner' : 'Beginner'}
+                onChange={(e) => {
+                  if (activeLangId) {
+                    setCourseTranslations(prev => prev.map(t => t.languageId === activeLangId ? { ...t, level: e.target.value } : t));
+                  }
+                }}
+                className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 bg-white"
+              >
+                <option value="Beginner">{levelLabels.Beginner}</option>
+                <option value="Intermediate">{levelLabels.Intermediate}</option>
+                <option value="Advanced">{levelLabels.Advanced}</option>
+              </select>
             </label>
             <div className="sm:col-span-2 text-sm text-stone-500">
               <strong>Süre:</strong> İçeriklerden otomatik hesaplanır (video süresi, yazı okuma süresi, PDF/quiz varsayılanları).
@@ -620,7 +666,7 @@ export function AdminCourseEditClient({ id }: { id: number }) {
                     {item.type === 'Text' && (
                       <div className="pt-2 border-t border-stone-200">
                         <div className="pt-2 border-t border-stone-200">
-                          <label className="block">
+                          <div className="block">
                             <span className="text-sm text-stone-600 block mb-2">Metin içerik (araçlar listesi vb.)</span>
                             <RichTextEditor
                               value={item.textContent ?? ''}
@@ -629,7 +675,7 @@ export function AdminCourseEditClient({ id }: { id: number }) {
                               minHeight="300px"
                               onUploadImage={adminUploadCourseMaterial}
                             />
-                          </label>
+                          </div>
                         </div>
                       </div>
                     )}

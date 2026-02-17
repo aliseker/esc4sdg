@@ -73,7 +73,16 @@ export async function adminMe(): Promise<{ email: string; role: string }> {
   return res.json();
 }
 
-export async function adminDashboard(): Promise<{ message: string; courses: number; users: number; timestamp: string }> {
+export async function adminDashboard(): Promise<{
+  message: string;
+  courses: number;
+  users: number;
+  projects: number;
+  partners: number;
+  languages: number;
+  socialLinks: number;
+  timestamp: string;
+}> {
   const token = getStoredToken();
   if (!token) throw new Error('Not authenticated');
   const res = await fetch(`${API_BASE}/api/admin/dashboard`, {

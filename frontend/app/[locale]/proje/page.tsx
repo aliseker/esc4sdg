@@ -11,31 +11,29 @@ import {
   Layers,
 } from 'lucide-react';
 import AnimateInView from '@/components/UI/AnimateInView';
-import { projects } from '@/lib/projects';
+import { getProjectsList } from '@/lib/projects';
+import ProjectListClient from './ProjectListClient';
 
-export async function generateMetadata() {
-  const t = await getTranslations('projects');
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'projects' });
   return {
     title: `${t('title')} – Escape4SDG`,
     description: t('subtitle'),
   };
 }
 
-export default async function ProjePage() {
-  const t = await getTranslations('projects');
-  const tList = await getTranslations('projectsList');
+export default async function ProjePage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'projects' });
+  const tList = await getTranslations({ locale, namespace: 'projectsList' });
+  const projects = await getProjectsList(locale);
 
   const objectives = [t('objectives.0'), t('objectives.1'), t('objectives.2')];
   const results = [t('results.0'), t('results.1'), t('results.2'), t('results.3'), t('results.4')];
 
 
-
-  const [featured, ...restProjects] = projects;
-  const FeaturedIcon = featured.icon;
-  const id = featured.id as 1 | 2 | 3 | 4 | 5;
-  const featuredTitle = tList(`project${id}Title`);
-  const featuredDescription = tList(`project${id}Description`);
-  const featuredLocation = tList(`project${id}Location`);
 
   return (
     <div className="min-h-screen bg-stone-50 overflow-hidden">
@@ -77,6 +75,8 @@ export default async function ProjePage() {
           </AnimateInView>
         </div>
       </section>
+
+      <ProjectListClient projects={projects} />
 
       {/* Objectives & Results - Bento (Ecceludus style) */}
       <section className="relative py-10 lg:py-16">
@@ -154,111 +154,6 @@ export default async function ProjePage() {
 
 
 
-      {/* Project cards grid */}
-      <section className="relative py-20 lg:py-28">
-        <div className="absolute inset-0 bg-dots opacity-30" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-teal-200/15 rounded-full blur-3xl translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-orange-200/15 rounded-full blur-3xl -translate-x-1/2" />
-
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimateInView animation="fade-up" delay={0}>
-            <div className="text-center mb-12">
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-stone-900 mb-4">
-                Öne Çıkan <span className="bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">Projeler</span>
-              </h2>
-              <p className="text-lg text-stone-600 max-w-2xl mx-auto">
-                SDG hedeflerine ulaşmak için yürüttüğümüz aktif projeler.
-              </p>
-            </div>
-          </AnimateInView>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Featured project - 2 cols */}
-            <AnimateInView animation="fade-up" delay={100} className="sm:col-span-2">
-              <Link href={`/proje/${featured.id}`} className="block h-full">
-                <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-orange-500 via-amber-500 to-orange-600 p-8 sm:p-10 min-h-[260px] shadow-2xl shadow-orange-500/30 hover:shadow-orange-500/40 hover:-translate-y-1 transition-all duration-500">
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-                  <div className="absolute top-1/2 right-8 opacity-10">
-                    <FeaturedIcon className="w-32 h-32 text-white" />
-                  </div>
-                  <div className="relative">
-                    <span className="inline-flex items-center gap-1.5 text-amber-100 text-sm font-bold mb-4">
-                      <Sparkles className="w-4 h-4" />
-                      Öne Çıkan Proje
-                    </span>
-                    <h3 className="text-2xl font-bold text-white mb-2 group-hover:text-amber-50 transition-colors">
-                      {featuredTitle}
-                    </h3>
-                    <p className="text-orange-100/90 text-sm mb-6 line-clamp-2">{featuredDescription}</p>
-                    <div className="flex items-center gap-2 text-white/80 text-sm mb-6">
-                      <MapPin className="w-4 h-4" />
-                      {featuredLocation} · {featured.date}
-                    </div>
-                    <span className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white text-orange-700 font-bold text-sm w-fit group-hover:bg-amber-100 transition-colors shadow-lg">
-                      {t('viewDetails')}
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            </AnimateInView>
-
-            {restProjects.slice(0, 4).map((project, i) => {
-              const Icon = project.icon;
-              const pid = project.id as 1 | 2 | 3 | 4 | 5;
-              const projTitle = tList(`project${pid}Title`);
-              const projDesc = tList(`project${pid}Description`);
-              const projLocation = tList(`project${pid}Location`);
-              const projCategory = tList(`project${pid}Category`);
-              const gradients = ['from-teal-500 via-emerald-500 to-teal-600', 'from-violet-500 via-purple-500 to-violet-600'];
-              const shadows = ['shadow-teal-500/30', 'shadow-violet-500/30'];
-              const gi = i % 2;
-              return (
-                <AnimateInView key={project.id} animation="fade-up" delay={(i + 2) * 100}>
-                  <Link href={`/proje/${project.id}`} className="block h-full">
-                    <div className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradients[gi]} p-6 sm:p-8 shadow-xl ${shadows[gi]} hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 h-full flex flex-col min-h-[240px]`}>
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-                      <div className="relative flex-1">
-                        <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center mb-5">
-                          <Icon className="w-7 h-7 text-white" />
-                        </div>
-                        <span className="inline-block px-3 py-1 rounded-lg bg-white/20 text-white text-xs font-bold mb-3">
-                          {projCategory}
-                        </span>
-                        <h3 className="text-lg font-bold text-white mb-2 line-clamp-2 group-hover:text-amber-100 transition-colors">
-                          {projTitle}
-                        </h3>
-                        <p className="text-white/85 text-sm mb-5 line-clamp-2 leading-relaxed">
-                          {projDesc}
-                        </p>
-                        <div className="flex items-center gap-2 text-white/80 text-sm">
-                          <MapPin className="w-4 h-4 shrink-0" />
-                          {projLocation} · {project.date}
-                        </div>
-                      </div>
-                      <span className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-white/20 text-white font-bold text-sm w-fit mt-4 group-hover:bg-white/30 transition-colors">
-                        {t('details')}
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                      </span>
-                    </div>
-                  </Link>
-                </AnimateInView>
-              );
-            })}
-          </div>
-
-          <AnimateInView animation="fade-up" delay={500} className="mt-12 text-center">
-            <Link
-              href="/courses"
-              className="group inline-flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-600 text-white rounded-2xl font-bold text-lg hover:from-teal-700 hover:via-emerald-700 hover:to-teal-700 transition-all shadow-2xl shadow-teal-500/30 hover:shadow-teal-500/40 hover:-translate-y-1"
-            >
-              <GraduationCap className="w-6 h-6" />
-              {t('cta')}
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </AnimateInView>
-        </div>
-      </section>
     </div>
   );
 }

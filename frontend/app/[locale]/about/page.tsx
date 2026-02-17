@@ -1,4 +1,5 @@
 import { getTranslations, getLocale } from 'next-intl/server';
+import { Link } from '@/i18n/navigation';
 import {
   ArrowRight,
   Target,
@@ -70,6 +71,7 @@ export default async function AboutPage() {
       desc: t('moocCardDesc'),
       gradient: 'from-teal-500 via-emerald-500 to-teal-600',
       shadow: 'shadow-teal-500/30',
+      href: '/courses',
     },
     {
       icon: Puzzle,
@@ -77,6 +79,7 @@ export default async function AboutPage() {
       desc: t('escapeCardDesc'),
       gradient: 'from-orange-500 via-amber-500 to-orange-600',
       shadow: 'shadow-orange-500/30',
+      href: '/proje',
     },
     {
       icon: Zap,
@@ -84,6 +87,7 @@ export default async function AboutPage() {
       desc: t('hubCardDesc'),
       gradient: 'from-violet-500 via-purple-500 to-violet-600',
       shadow: 'shadow-violet-500/30',
+      href: '/courses',
     },
   ];
 
@@ -95,7 +99,7 @@ export default async function AboutPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-teal-500 via-emerald-400 to-teal-600" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_20%_120%,rgba(251,146,60,0.4),transparent)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_-10%,rgba(168,85,247,0.3),transparent)]" />
-        
+
         {/* Decorative floating shapes */}
         <div className="absolute top-20 left-[10%] w-20 h-20 rounded-full bg-white/10 animate-float" />
         <div className="absolute top-40 right-[15%] w-32 h-32 rounded-full bg-white/5 animate-float-slow" />
@@ -120,13 +124,13 @@ export default async function AboutPage() {
               {t('badge')}
             </div>
           </AnimateInView>
-          
+
           <AnimateInView animation="fade-up" delay={100}>
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white mb-6 drop-shadow-lg">
               {t('title')}
             </h1>
           </AnimateInView>
-          
+
           <AnimateInView animation="fade-up" delay={200}>
             <p className="text-xl sm:text-2xl text-white/90 leading-relaxed max-w-3xl mx-auto mb-8 font-medium">
               {t('subtitle')}
@@ -178,11 +182,11 @@ export default async function AboutPage() {
       </section>
 
       {/* Objectives & Results - Bento Style */}
-      <section className="relative py-20 lg:py-28">
+      <section className="relative py-12 lg:py-16">
         <div className="absolute inset-0 bg-dots opacity-30" />
         <div className="absolute top-0 left-0 w-96 h-96 bg-teal-200/20 rounded-full blur-3xl -translate-x-1/2" />
         <div className="absolute bottom-0 right-0 w-80 h-80 bg-orange-200/20 rounded-full blur-3xl translate-x-1/2" />
-        
+
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimateInView animation="fade-up" delay={0}>
             <div className="text-center mb-16">
@@ -205,7 +209,7 @@ export default async function AboutPage() {
                 <div className="absolute top-1/2 right-8 opacity-10">
                   <Target className="w-32 h-32" />
                 </div>
-                
+
                 <div className="relative">
                   <div className="flex items-center gap-3 mb-8">
                     <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
@@ -213,7 +217,7 @@ export default async function AboutPage() {
                     </div>
                     <h3 className="text-2xl font-bold">{t('objectivesTitle')}</h3>
                   </div>
-                  
+
                   <ul className="space-y-5">
                     {objectives.map((obj, i) => (
                       <li key={i} className="flex gap-4 group/item">
@@ -232,7 +236,7 @@ export default async function AboutPage() {
             <AnimateInView animation="fade-up" delay={200} className="lg:col-span-5">
               <div className="relative overflow-hidden rounded-3xl bg-white border-2 border-stone-100 p-8 sm:p-10 shadow-xl shadow-stone-200/40 h-full group hover:border-orange-200 transition-colors">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-orange-100 to-amber-100 rounded-full -translate-y-1/2 translate-x-1/2 opacity-60" />
-                
+
                 <div className="relative">
                   <div className="flex items-center gap-3 mb-8">
                     <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
@@ -240,7 +244,7 @@ export default async function AboutPage() {
                     </div>
                     <h3 className="text-2xl font-bold text-stone-900">{t('resultsTitle')}</h3>
                   </div>
-                  
+
                   <ul className="space-y-4">
                     {results.map((res, i) => (
                       <li key={i} className="flex gap-3 group/item">
@@ -258,8 +262,28 @@ export default async function AboutPage() {
         </div>
       </section>
 
+      {/* Sosyal Medya - panelden eklenen linkler */}
+      <section className="relative py-10 lg:py-12 bg-white border-t border-stone-100">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimateInView animation="fade-up" delay={0}>
+            <div className="text-center mb-10">
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-100 text-teal-700 text-sm font-bold mb-4">
+                <Share2 className="w-4 h-4" />
+                {t('socialTitle')}
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-bold text-stone-900">
+                {t('socialHeading')}
+              </h2>
+            </div>
+          </AnimateInView>
+          <AnimateInView animation="fade-up" delay={100}>
+            <SocialLinks variant="about" initialLinks={socialLinks} />
+          </AnimateInView>
+        </div>
+      </section>
+
       {/* Nasıl çalışır? - How it works */}
-      <section id="how-it-works" className="relative py-20 lg:py-28 scroll-mt-24">
+      <section id="how-it-works" className="relative py-12 lg:py-16 scroll-mt-24">
         <div className="absolute inset-0 bg-dots opacity-20" />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <AnimateInView animation="fade-up" delay={0}>
@@ -301,82 +325,6 @@ export default async function AboutPage() {
               );
             })}
           </div>
-        </div>
-      </section>
-
-      {/* Best Results Cards - Interactive */}
-      <section className="relative py-20 lg:py-28 bg-gradient-to-b from-stone-100 via-amber-50/50 to-stone-50">
-        <div className="absolute inset-0 bg-grid opacity-20" />
-        
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimateInView animation="fade-up" delay={0}>
-            <div className="text-center mb-16">
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-100 text-violet-700 text-sm font-bold mb-4">
-                <Sparkles className="w-4 h-4" />
-                {t('outputsBadge')}
-              </span>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-stone-900 mb-4">
-                {t('bestResultsTitle')}
-              </h2>
-              <p className="text-stone-500 text-lg max-w-2xl mx-auto">
-                {t('outputsSubtitle')}
-              </p>
-            </div>
-          </AnimateInView>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-            {cards.map((card, i) => {
-              const Icon = card.icon;
-              return (
-                <AnimateInView key={i} animation="fade-up" delay={i * 150}>
-                  <div
-                    className={`group relative overflow-hidden rounded-3xl bg-gradient-to-br ${card.gradient} p-8 text-white shadow-2xl ${card.shadow} h-full flex flex-col hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300 cursor-pointer`}
-                  >
-                    {/* Decorative elements */}
-                    <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500" />
-                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
-                    <div className="absolute top-1/2 right-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                      <Icon className="w-24 h-24" />
-                    </div>
-                    
-                    <div className="relative flex-1">
-                      <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg">
-                        <Icon className="w-8 h-8 text-white" strokeWidth={2} />
-                      </div>
-                      <h3 className="text-xl font-bold mb-3">{card.title}</h3>
-                      <p className="text-white/85 leading-relaxed">{card.desc}</p>
-                    </div>
-                    
-                    {/* Hover arrow */}
-                    <div className="mt-6 flex items-center gap-2 text-white/70 group-hover:text-white transition-colors">
-                      <span className="text-sm font-semibold">Keşfet</span>
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </div>
-                </AnimateInView>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Sosyal Medya - panelden eklenen linkler */}
-      <section className="relative py-16 lg:py-20 bg-white border-t border-stone-100">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <AnimateInView animation="fade-up" delay={0}>
-            <div className="text-center mb-10">
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-100 text-teal-700 text-sm font-bold mb-4">
-                <Share2 className="w-4 h-4" />
-                {t('socialTitle')}
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-bold text-stone-900">
-                {t('socialHeading')}
-              </h2>
-            </div>
-          </AnimateInView>
-          <AnimateInView animation="fade-up" delay={100}>
-            <SocialLinks variant="about" initialLinks={socialLinks} />
-          </AnimateInView>
         </div>
       </section>
     </div>

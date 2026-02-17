@@ -31,6 +31,7 @@ public class Course
 
     public ICollection<CourseTranslation> Translations { get; set; } = new List<CourseTranslation>();
     public ICollection<CourseModule> Modules { get; set; } = new List<CourseModule>();
+    public ICollection<Rating> Ratings { get; set; } = new List<Rating>();
 }
 
 public class CourseTranslation

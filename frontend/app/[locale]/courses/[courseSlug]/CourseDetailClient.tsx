@@ -4,8 +4,9 @@ import Image from 'next/image';
 import { useCallback, useEffect, useState } from 'react';
 import { useLocale } from 'next-intl';
 import { Link, useRouter } from '@/i18n/navigation';
-import { getCourseBySlug as getCourseApi, enrollCourse, getCourseProgress, type CourseDetail } from '@/lib/coursesApi';
-import { getCourseBySlug as getCourseMock } from '@/lib/mockCourses';
+import { getCourseBySlug as getCourseApi, enrollCourse, getCourseProgress, rateCourse, type CourseDetail } from '@/lib/coursesApi';
+import { StarRating } from '@/components/StarRating';
+
 import { getUserToken, API_BASE, AUTH_CHANGE_EVENT } from '@/lib/authApi';
 import { CourseCurriculum } from './CourseCurriculum';
 import { ArrowLeft } from 'lucide-react';
@@ -16,13 +17,12 @@ function courseImageSrc(imageUrl: string | null | undefined) {
   return imageUrl.startsWith('http') ? imageUrl : `${API_BASE}${imageUrl}`;
 }
 
-type MockCourse = ReturnType<typeof getCourseMock>;
+
 
 export function CourseDetailClient({ courseSlug }: { courseSlug: string }) {
   const router = useRouter();
   const locale = useLocale();
   const [courseApi, setCourseApi] = useState<CourseDetail | null>(null);
-  const [courseMock, setCourseMock] = useState<MockCourse | null>(null);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
   const [enrollError, setEnrollError] = useState('');
@@ -41,9 +41,8 @@ export function CourseDetailClient({ courseSlug }: { courseSlug: string }) {
     getCourseApi(courseSlug, locale)
       .then((c) => {
         setCourseApi(c ?? null);
-        if (!c) setCourseMock(getCourseMock(courseSlug) ?? null);
       })
-      .catch(() => setCourseMock(getCourseMock(courseSlug) ?? null))
+      .catch(() => setCourseApi(null))
       .finally(() => setLoading(false));
   }, [courseSlug, locale]);
 
@@ -85,7 +84,13 @@ export function CourseDetailClient({ courseSlug }: { courseSlug: string }) {
       setIsEnrolled(true);
       router.push(`/courses/${courseSlug}`);
     } catch (err) {
-      setEnrollError(locale === 'tr' ? 'Kayıt yapılamadı, lütfen tekrar deneyin.' : 'Enrollment failed, please try again.');
+      setEnrollError(
+        err instanceof Error
+          ? err.message
+          : locale === 'tr'
+            ? 'Kayıt yapılamadı, lütfen tekrar deneyin.'
+            : 'Enrollment failed, please try again.'
+      );
     } finally {
       setStarting(false);
     }
@@ -100,14 +105,14 @@ export function CourseDetailClient({ courseSlug }: { courseSlug: string }) {
   }
 
   const fromApi = courseApi != null;
-  const title = fromApi ? courseApi.title : courseMock?.title?.[locale as 'tr' | 'en'] ?? courseMock?.title?.tr;
-  const summary = fromApi ? courseApi.summary : courseMock?.summary?.[locale as 'tr' | 'en'] ?? courseMock?.summary?.tr;
-  const category = fromApi ? courseApi.category : courseMock?.category;
-  const level = fromApi ? courseApi.level : courseMock?.level;
-  const duration = fromApi ? `${courseApi.durationMinutes} dk` : courseMock?.duration;
-  const hasCertificate = fromApi ? courseApi.hasCertificate : true;
+  const title = courseApi?.title;
+  const summary = courseApi?.summary;
+  const category = courseApi?.category;
+  const level = courseApi?.level;
+  const duration = courseApi ? `${courseApi.durationMinutes} dk` : '';
+  const hasCertificate = courseApi?.hasCertificate ?? false;
 
-  if (!courseApi && !courseMock) {
+  if (!courseApi) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-stone-50">
         <p className="text-stone-600">Kurs bulunamadı.</p>
@@ -137,8 +142,8 @@ export function CourseDetailClient({ courseSlug }: { courseSlug: string }) {
             href="/courses"
             className="inline-flex items-center gap-2 text-sm font-semibold text-white/90 hover:text-white mb-6 transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" />
-            {locale === 'tr' ? '← Kurslara dön' : '← Back to courses'}
+            <ArrowLeft className="w-6 h-6" />
+            {locale === 'tr' ? 'Kurslara dön' : 'Back to courses'}
           </Link>
           <h1 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tight">
             {title}
@@ -175,13 +180,26 @@ export function CourseDetailClient({ courseSlug }: { courseSlug: string }) {
             {fromApi && courseApi && (
               <CourseCurriculum course={courseApi} locale={locale} courseSlug={courseSlug} isEnrolled={isEnrolled} />
             )}
-            {!fromApi && courseMock && (
-              <CourseCurriculum mockCourse={courseMock} locale={locale} />
-            )}
           </div>
           <aside className="lg:w-80 shrink-0">
             <div className="rounded-2xl bg-white border border-stone-200 p-6 shadow-sm sticky top-24">
               <div className="space-y-4 text-stone-700">
+                <div className="flex items-center justify-between pb-4 border-b border-stone-100">
+                  <span className="font-bold text-lg text-stone-900">
+                    {courseApi?.averageRating?.toFixed(1) ?? '0.0'}
+                  </span>
+                  <div className="flex flex-col items-end">
+                    <StarRating
+                      rating={courseApi?.averageRating ?? 0}
+                      readOnly={true}
+                      showCount={false}
+                    />
+                    <span className="text-xs text-stone-500 mt-1">
+                      ({courseApi?.ratingCount ?? 0} değerlendirme)
+                    </span>
+                  </div>
+                </div>
+
                 <p className="flex items-center gap-2">
                   <span className="font-medium">Süre:</span>
                   {duration}
@@ -203,6 +221,32 @@ export function CourseDetailClient({ courseSlug }: { courseSlug: string }) {
                   {hasCertificate ? 'Evet' : 'Hayır'}
                 </p>
               </div>
+
+              {isEnrolled && fromApi && courseApi && (
+                <div className="mt-4 pt-4 border-t border-stone-100">
+                  <p className="text-sm font-bold text-stone-900 mb-2">
+                    {locale === 'tr' ? 'Puanınız:' : 'Your Rating:'}
+                  </p>
+                  <StarRating
+                    rating={courseApi.userRating ?? 0}
+                    onRate={async (score) => {
+                      const token = getUserToken();
+                      if (!token) return;
+                      try {
+                        const result = await rateCourse(courseApi.id, score, token);
+                        setCourseApi({
+                          ...courseApi,
+                          userRating: score,
+                          averageRating: result.averageRating,
+                          ratingCount: result.ratingCount,
+                        });
+                      } catch (e) {
+                        alert('Puan verilemedi.');
+                      }
+                    }}
+                  />
+                </div>
+              )}
               {enrollError && (
                 <p className="mt-4 p-3 rounded-xl bg-red-50 border border-red-100 text-sm text-red-700 text-center">
                   {enrollError}

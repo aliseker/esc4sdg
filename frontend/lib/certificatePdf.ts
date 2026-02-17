@@ -2,6 +2,8 @@ import { jsPDF } from 'jspdf';
 
 /**
  * Generates an Escape4SDG certificate as PDF and triggers download.
+ * Uses a canvas-based rendering approach to support Unicode (Turkish) characters
+ * and maintain consistent styling with the on-screen preview.
  */
 export function downloadCertificatePdf(options: {
   userName: string;
@@ -10,44 +12,68 @@ export function downloadCertificatePdf(options: {
   filename?: string;
 }): void {
   const { userName, courseTitle, issuedAt, filename = 'Escape4SDG-Sertifika.pdf' } = options;
+
+  // A4 Landscape size in mm
+  const pdfW = 297;
+  const pdfH = 210;
+
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-  const w = doc.internal.pageSize.getWidth();
-  const h = doc.internal.pageSize.getHeight();
 
   // Load the background image
   const img = new Image();
   img.src = '/images/sertifika.jpeg';
 
   img.onload = () => {
-    // Add background image
-    doc.addImage(img, 'JPEG', 0, 0, w, h);
+    // 1. Add background image
+    doc.addImage(img, 'JPEG', 0, 0, pdfW, pdfH);
 
-    // Participant name - Centered below "This is to certify that"
-    // Adjust Y coordinate based on the template
-    doc.setFontSize(24);
-    doc.setTextColor(30, 41, 59); // Dark slate
-    doc.setFont('helvetica', 'bold');
-    doc.text(userName, w / 2, 95, { align: 'center' });
+    // 2. Create a high-resolution canvas to render the text precisely
+    // Using a 4:1 scale factor for sharp text in PDF
+    const scale = 4;
+    const canvas = document.createElement('canvas');
+    canvas.width = pdfW * scale;
+    canvas.height = pdfH * scale;
+    const ctx = canvas.getContext('2d');
 
-    // Course name - Centered below "has successfully completed..."
-    doc.setFontSize(20);
-    doc.setTextColor(20, 184, 166); // Teal
-    doc.setFont('helvetica', 'bold');
-    doc.text(courseTitle, w / 2, 125, { align: 'center', maxWidth: w - 60 });
+    if (!ctx) {
+      console.error('Canvas context failed');
+      return;
+    }
 
-    // Date - Bottom right or where appropriate
-    doc.setFontSize(10);
-    doc.setTextColor(100, 116, 139);
-    doc.setFont('helvetica', 'normal');
-    const dateStr = new Date(issuedAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
-    // Assuming there is a space for date or we just place it at the bottom
-    doc.text(`Tarih: ${dateStr}`, w - 20, h - 20, { align: 'right' });
+    // Clear canvas (transparent)
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // --- RENDER USER NAME ---
+    // Match reverted CertificateClient.tsx: top: 43%
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'center';
+
+    // Size adjusted to match visual weight
+    ctx.font = `italic 600 ${14 * scale}px Palatino, "Book Antiqua", Georgia, serif`;
+    ctx.fillStyle = '#1e293b'; // text-stone-800
+
+    const nameX = canvas.width / 2;
+    const nameY = canvas.height * 0.485; // Visually tuned to sit on the line
+    ctx.fillText(userName, nameX, nameY);
+
+    // --- RENDER COURSE TITLE ---
+    // Match reverted CertificateClient.tsx: top: 69%
+    ctx.font = `italic bold ${11 * scale}px Georgia, "Times New Roman", serif`;
+    ctx.fillStyle = '#0f766e'; // text-teal-700
+
+    const courseX = canvas.width / 2;
+    const courseY = canvas.height * 0.735; // Visually tuned to fit the template gap
+    ctx.fillText(courseTitle, courseX, courseY);
+
+    // 3. Add the rendered text layer as an image over the background
+    const textLayerData = canvas.toDataURL('image/png');
+    doc.addImage(textLayerData, 'PNG', 0, 0, pdfW, pdfH);
+
+    // 4. Save the PDF
     doc.save(filename);
   };
 
   img.onerror = () => {
-    // Fallback if image fails to load
     console.error('Certificate background failed to load');
     doc.text('Certificate Generation Failed - Image not found', 10, 10);
     doc.save('error.pdf');

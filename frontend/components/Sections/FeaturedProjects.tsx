@@ -1,43 +1,51 @@
 'use client';
 
-import { MapPin, ArrowRight, Layers, Sparkles } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useRef, useState, useEffect } from 'react';
+import { MapPin, ArrowRight, Layers, Sparkles, Clock, Calendar } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
+import Image from 'next/image';
 import { Link } from '@/i18n/navigation';
 import AnimateInView from '@/components/UI/AnimateInView';
-import { projects, type Project } from '@/lib/projects';
+import { getProjectsList, type ProjectItem } from '@/lib/projects';
+import { API_BASE } from '@/lib/authApi';
+import studyCover from '@/public/images/study.jpg';
 
-const featuredProjects = projects.slice(0, 3);
+function projectImageSrc(imageUrl: string | null | undefined) {
+  if (!imageUrl) return studyCover;
+  return imageUrl.startsWith('http') ? imageUrl : `${API_BASE}${imageUrl}`;
+}
 
 /** Featured hero project - spans 2 cols, gradient */
-const FeaturedProjectCard = ({ project, delay = 0 }: { project: Project; delay?: number }) => {
-  const t = useTranslations('projects');
-  const tList = useTranslations('projectsList');
-  const Icon = project.icon;
-  const id = project.id as 1 | 2 | 3 | 4 | 5;
-  const title = tList(`project${id}Title`);
-  const description = tList(`project${id}Description`);
-  const location = tList(`project${id}Location`);
+const FeaturedProjectCard = ({ project, t, delay = 0 }: { project: ProjectItem; t: any; delay?: number }) => {
   return (
     <AnimateInView animation="fade-up" delay={delay} className="sm:col-span-2">
-      <Link href={`/proje/${project.id}`} className="block h-full">
-        <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-orange-500 via-amber-500 to-orange-600 p-0 min-h-[280px] flex flex-col sm:flex-row shadow-2xl shadow-orange-500/30 hover:shadow-orange-500/40 hover:-translate-y-1 transition-all duration-500">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
-          <div className="absolute top-1/2 right-8 opacity-10">
-            <Icon className="w-32 h-32 text-white" />
+      <Link href={`/proje/${project.slug}`} className="block h-full">
+        <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-orange-500 via-amber-500 to-orange-600 p-0 min-h-[320px] flex flex-col sm:flex-row shadow-2xl shadow-orange-500/30 hover:shadow-orange-500/40 hover:-translate-y-1 transition-all duration-500">
+          <div className="relative w-full sm:w-2/5 h-56 sm:h-auto min-h-[200px] flex-shrink-0">
+            <Image
+              src={projectImageSrc(project.coverImageUrl)}
+              alt=""
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-700"
+              sizes="(max-width: 640px) 100vw, 40vw"
+              unoptimized={!!project.coverImageUrl}
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-600/80 via-transparent to-transparent sm:bg-gradient-to-l" />
           </div>
-          <div className="flex-1 p-8 sm:p-10 flex flex-col justify-center relative">
+          <div className="flex-1 p-8 sm:p-10 flex flex-col justify-center relative bg-gradient-to-br from-orange-500 via-amber-500 to-orange-600 sm:bg-none">
             <span className="inline-flex items-center gap-1.5 text-amber-100 text-sm font-bold mb-4">
               <Sparkles className="w-4 h-4" />
               {t('featuredBadge')}
             </span>
             <h3 className="text-2xl sm:text-3xl font-black text-white mb-2 leading-tight group-hover:text-amber-50 transition-colors">
-              {title}
+              {project.title}
             </h3>
-            <p className="text-orange-100/90 text-sm mb-6 line-clamp-2">{description}</p>
-            <div className="flex items-center gap-2 text-white/80 text-sm mb-6">
-              <MapPin className="w-4 h-4" />
-              {location} · {project.date}
+            <p className="text-orange-100/90 text-sm mb-6 line-clamp-3">{project.subtitle}</p>
+            <div className="flex items-center gap-4 text-white/80 text-sm mb-6">
+              <span className="flex items-center gap-1.5">
+                <Calendar className="w-4 h-4" />
+                {new Date(project.createdAt).getFullYear()}
+              </span>
             </div>
             <span className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white text-orange-700 font-bold text-sm w-fit group-hover:bg-amber-100 group-hover:text-orange-800 transition-colors shadow-lg">
               {t('viewDetails')}
@@ -51,17 +59,9 @@ const FeaturedProjectCard = ({ project, delay = 0 }: { project: Project; delay?:
 };
 
 /** Project card - gradient bg, icon focus */
-const ProjectCard = ({ project, delay = 0, themeIndex = 0 }: {
-  project: Project; delay?: number; themeIndex?: number;
+const ProjectCard = ({ project, t, delay = 0, themeIndex = 0 }: {
+  project: ProjectItem; t: any; delay?: number; themeIndex?: number;
 }) => {
-  const t = useTranslations('projects');
-  const tList = useTranslations('projectsList');
-  const Icon = project.icon;
-  const id = project.id as 1 | 2 | 3 | 4 | 5;
-  const title = tList(`project${id}Title`);
-  const description = tList(`project${id}Description`);
-  const location = tList(`project${id}Location`);
-  const category = tList(`project${id}Category`);
   const gradients = [
     'from-teal-500 via-emerald-500 to-teal-600',
     'from-violet-500 via-purple-500 to-violet-600',
@@ -70,32 +70,35 @@ const ProjectCard = ({ project, delay = 0, themeIndex = 0 }: {
   const i = themeIndex % 2;
   return (
     <AnimateInView animation="fade-up" delay={delay} className="h-full">
-      <Link href={`/proje/${project.id}`} className="block h-full">
-        <div className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradients[i]} p-6 sm:p-8 shadow-xl ${shadows[i]} hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 h-full flex flex-col`}>
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
-          <div className="relative flex-1">
-            <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-              <Icon className="w-7 h-7 text-white" />
-            </div>
-            <span className="inline-block px-3 py-1 rounded-lg bg-white/20 text-white text-xs font-bold mb-4">
-              {category}
-            </span>
+      <Link href={`/proje/${project.slug}`} className="block h-full">
+        <div className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradients[i]} p-0 shadow-xl ${shadows[i]} hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 h-full flex flex-col`}>
+          <div className="relative w-full h-48 flex-shrink-0">
+            <Image
+              src={projectImageSrc(project.coverImageUrl)}
+              alt=""
+              fill
+              className="object-cover group-hover:scale-110 transition-transform duration-700"
+              sizes="(max-width: 1024px) 50vw, 33vw"
+              unoptimized={!!project.coverImageUrl}
+            />
+            <div className={`absolute inset-0 bg-gradient-to-t ${gradients[i]} opacity-80`} />
+          </div>
+          <div className="relative flex-1 p-6 sm:p-8 flex flex-col -mt-12">
             <h3 className="text-xl font-bold text-white mb-2 group-hover:text-amber-100 transition-colors leading-tight line-clamp-2">
-              {title}
+              {project.title}
             </h3>
             <p className="text-white/85 text-sm mb-5 line-clamp-3 leading-relaxed">
-              {description}
+              {project.subtitle}
             </p>
-            <div className="flex items-center gap-2 text-white/80 text-sm mb-5">
-              <MapPin className="w-4 h-4 shrink-0" />
-              {location} · {project.date}
+            <div className="flex items-center gap-2 text-white/80 text-sm mb-5 mt-auto">
+              <Calendar className="w-4 h-4 shrink-0" />
+              <span className="font-medium">{new Date(project.createdAt).getFullYear()}</span>
             </div>
+            <span className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-white/20 backdrop-blur-sm text-white font-bold text-sm w-fit group-hover:bg-white/30 transition-colors">
+              {t('details')}
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            </span>
           </div>
-          <span className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-white/20 backdrop-blur-sm text-white font-bold text-sm w-fit group-hover:bg-white/30 transition-colors">
-            {t('details')}
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-          </span>
         </div>
       </Link>
     </AnimateInView>
@@ -104,7 +107,18 @@ const ProjectCard = ({ project, delay = 0, themeIndex = 0 }: {
 
 const FeaturedProjects = () => {
   const t = useTranslations('projects');
-  const [featured, ...rest] = featuredProjects;
+  const locale = useLocale();
+  const [projects, setProjects] = useState<ProjectItem[]>([]);
+
+  useEffect(() => {
+    getProjectsList(locale).then(setProjects);
+  }, [locale]);
+
+  const sorted = [...projects].sort((a, b) => a.sortOrder - b.sortOrder);
+  const featured = sorted[0];
+  const rest = sorted.slice(1, 3);
+
+  if (!featured && projects.length === 0) return null; // Don't hide completely if loading? Or maybe show skeleton. For now hide.
 
   return (
     <section className="relative pt-12 lg:pt-16 pb-24 lg:pb-28 overflow-hidden">
@@ -129,9 +143,9 @@ const FeaturedProjects = () => {
         </AnimateInView>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-12">
-          <FeaturedProjectCard project={featured} delay={0} />
-          <ProjectCard project={rest[0]} delay={100} themeIndex={0} />
-          <ProjectCard project={rest[1]} delay={150} themeIndex={1} />
+          {featured && <FeaturedProjectCard project={featured} t={t} delay={0} />}
+          {rest[0] && <ProjectCard project={rest[0]} t={t} delay={100} themeIndex={0} />}
+          {rest[1] && <ProjectCard project={rest[1]} t={t} delay={150} themeIndex={1} />}
         </div>
 
         <AnimateInView animation="fade-up" delay={200} className="text-center">

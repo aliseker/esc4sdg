@@ -129,20 +129,44 @@ export function CertificateClient({ courseSlug }: { courseSlug: string }) {
                 <Award className="w-8 h-8 text-white" />
               </div>
             </div>
-            <div className="p-8 rounded-2xl border-2 border-teal-100 bg-gradient-to-br from-white via-teal-50/20 to-emerald-50/30 text-center">
-              <p className="text-sm font-bold tracking-widest text-teal-600">SERTİFİKA</p>
-              <h2 className="mt-4 text-2xl font-black text-stone-900">{certDetail.courseTitle}</h2>
-              <p className="mt-6 text-xl font-bold text-stone-800 border-b-2 border-teal-200 pb-4 inline-block">
-                {certDetail.userName}
-              </p>
-              <p className="mt-6 text-stone-600 text-sm">
-                {locale === 'tr' ? 'Escape4SDG – Bu sertifika ilgili kursun tüm modüllerinin başarıyla tamamlandığını doğrular.' : 'Escape4SDG – This certificate verifies successful completion of all modules.'}
-              </p>
-              <p className="mt-4 text-stone-500 text-sm">{dateStr}</p>
+            {/* Certificate preview using template image */}
+            <div className="relative w-full" style={{ aspectRatio: '1.414 / 1' }}>
+              {/* Background template */}
+              <img
+                src="/images/sertifika.jpeg"
+                alt="Certificate"
+                className="w-full h-full object-contain rounded-2xl"
+              />
+              {/* User name overlay */}
+              <div
+                className="absolute left-0 right-0 text-center"
+                style={{ top: '43%' }}
+              >
+                <span
+                  className="text-[2vw] sm:text-[1.7vw] md:text-[1.5vw] font-semibold text-stone-800 tracking-[0.08em] capitalize drop-shadow-sm"
+                  style={{ fontFamily: 'Palatino, "Book Antiqua", Georgia, serif', fontStyle: 'italic' }}
+                >
+                  {certDetail.userName}
+                </span>
+              </div>
+              {/* Course name overlay */}
+              <div
+                className="absolute left-0 right-0 text-center"
+                style={{ top: '69%' }}
+              >
+                <span
+                  className="text-[1.7vw] sm:text-[1.4vw] md:text-[1.2vw] font-bold italic text-teal-700 tracking-wide"
+                  style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+                >
+                  {certDetail.courseTitle}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center justify-center gap-4 mt-6">
               <button
                 type="button"
                 onClick={handleDownloadPdf}
-                className="mt-8 inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-teal-600 text-white font-bold hover:bg-teal-700"
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-teal-600 text-white font-bold hover:bg-teal-700 transition-colors shadow-lg"
               >
                 <Download className="w-5 h-5" />
                 {locale === 'tr' ? 'PDF indir' : 'Download PDF'}

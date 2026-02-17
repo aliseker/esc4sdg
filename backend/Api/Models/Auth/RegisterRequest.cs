@@ -8,9 +8,8 @@ public sealed class RegisterRequest
     [EmailAddress]
     public string Email { get; set; } = default!;
 
-    [Required]
-    [MinLength(4)]
-    public string Username { get; set; } = default!;
+    [MaxLength(60)]
+    public string? Username { get; set; }
 
     [Required]
     [MinLength(8)]

@@ -30,10 +30,10 @@ public sealed class PartnersController : ControllerBase
                 p.Website,
                 p.LogoUrl,
                 p.LogoPosition,
-                Description = p.Translations.FirstOrDefault(t => t.LanguageId == languageId).Description
-                              ?? p.Translations.FirstOrDefault(t => t.LanguageId == enId).Description
-                              ?? p.Translations.FirstOrDefault(t => t.LanguageId == trId).Description
-                              ?? p.Translations.FirstOrDefault().Description
+                Description = p.Translations.Where(t => t.LanguageId == languageId && !string.IsNullOrWhiteSpace(t.Description)).Select(t => t.Description).FirstOrDefault()
+                              ?? p.Translations.Where(t => t.LanguageId == enId && !string.IsNullOrWhiteSpace(t.Description)).Select(t => t.Description).FirstOrDefault()
+                              ?? p.Translations.Where(t => t.LanguageId == trId && !string.IsNullOrWhiteSpace(t.Description)).Select(t => t.Description).FirstOrDefault()
+                              ?? p.Translations.Where(t => !string.IsNullOrWhiteSpace(t.Description)).Select(t => t.Description).FirstOrDefault()
             })
             .ToListAsync(cancellationToken);
         return Ok(list);

@@ -210,10 +210,18 @@ export function RichTextEditor({
   // Dışarıdan value değişince (örn. dil alanı değişimi) içeriği senkronize et; kullanıcı yazarken üzerine yazma
   useEffect(() => {
     if (!editor) return;
+
+    // Eğer editör odaklanmışsa (kullanıcı yazıyorsa) dışarıdan gelen güncellemeyi yoksay
+    // Bu, "jumping cursor" ve seçim kaybolma sorunlarını engeller
+    if (editor.isFocused) return;
+
     const fromParent = (valueRef.current || '').trim();
     const fromEditor = imageSrcToStorage(editor.getHTML()).trim();
-    if (fromParent === fromEditor) return;
-    editor.commands.setContent(imageSrcToDisplay(valueRef.current || ''), { emitUpdate: false });
+
+    // Sadece içerik gerçekten farklıysa güncelle
+    if (fromParent !== fromEditor) {
+      editor.commands.setContent(imageSrcToDisplay(valueRef.current || ''), { emitUpdate: false });
+    }
   }, [editor, value]);
 
   // Toolbar ikonlarının seçim/transaction sonrası güncellenmesi (debounce ile sonsuz döngü önlenir)
@@ -327,21 +335,21 @@ export function RichTextEditor({
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-1 p-2 border-b border-stone-200 bg-stone-50">
         <ToolbarButton
-          onClick={() => editor.chain().focus().extendMarkRange('bold').toggleBold().run()}
+          onClick={() => editor.chain().focus().toggleBold().run()}
           active={editor.isActive('bold')}
           title="Kalın"
         >
           <BoldIcon />
         </ToolbarButton>
         <ToolbarButton
-          onClick={() => editor.chain().focus().extendMarkRange('italic').toggleItalic().run()}
+          onClick={() => editor.chain().focus().toggleItalic().run()}
           active={editor.isActive('italic')}
           title="İtalik"
         >
           <ItalicIcon />
         </ToolbarButton>
         <ToolbarButton
-          onClick={() => editor.chain().focus().extendMarkRange('underline').toggleUnderline().run()}
+          onClick={() => editor.chain().focus().toggleUnderline().run()}
           active={editor.isActive('underline')}
           title="Altı çizili"
         >
@@ -527,7 +535,10 @@ function ToolbarButton({
   return (
     <button
       type="button"
-      onMouseDown={onMouseDown}
+      onMouseDown={(e) => {
+        e.preventDefault();
+        onMouseDown?.(e);
+      }}
       onClick={onClick}
       title={title}
       className={`p-1.5 rounded hover:bg-stone-200 ${active ? 'bg-amber-100 text-amber-800' : 'text-stone-600'}`}

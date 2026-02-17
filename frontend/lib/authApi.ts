@@ -12,7 +12,6 @@ const USER_INFO_KEY = 'esc4sdg_user_info';
 
 export type UserInfo = {
   email?: string;
-  username?: string;
   displayName?: string;
 };
 
@@ -54,6 +53,15 @@ export function clearUserToken(): void {
   window.dispatchEvent(new CustomEvent(AUTH_CHANGE_EVENT));
 }
 
+/** 401 alındığında tokeni siler ve login'e atar */
+export function handleUser401(): never {
+  if (typeof window !== 'undefined') {
+    clearUserToken();
+    window.location.href = '/login?expired=1';
+  }
+  throw new Error('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+}
+
 export type AuthResponse = {
   token: string;
   role: string;
@@ -64,7 +72,6 @@ export type AuthResponse = {
 
 export type RegisterRequest = {
   email: string;
-  username: string;
   password: string;
   displayName?: string;
   gender?: string;
@@ -72,7 +79,7 @@ export type RegisterRequest = {
   school?: string;
 };
 
-async function readErrorMessage(res: Response): Promise<string> {
+export async function readErrorMessage(res: Response): Promise<string> {
   const text = await res.text().catch(() => '');
   if (!text) return res.statusText || 'Request failed';
   try {
@@ -113,3 +120,19 @@ export async function loginUser(emailOrUsername: string, password: string): Prom
   return res.json();
 }
 
+export async function updateProfile(token: string, displayName: string): Promise<{ displayName: string }> {
+  const res = await fetch(`${API_BASE}/api/auth/profile`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ displayName }),
+  });
+
+  if (!res.ok) {
+    throw new Error(await readErrorMessage(res));
+  }
+
+  return res.json();
+}

@@ -55,7 +55,7 @@ public sealed class AdminSocialLinksController : ControllerBase
             return BadRequest(new { message = "URL http veya https ile başlamalı." });
         try
         {
-            var maxOrder = await _context.SocialLinks.Select(x => x.SortOrder).DefaultIfEmpty(-1).MaxAsync(cancellationToken);
+            var maxOrder = await _context.SocialLinks.MaxAsync(x => (int?)x.SortOrder, cancellationToken) ?? -1;
             var s = new SocialLink
             {
                 Platform = platform,

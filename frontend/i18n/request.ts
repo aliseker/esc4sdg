@@ -17,9 +17,65 @@ export default getRequestConfig(async ({ requestLocale }) => {
       headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', Pragma: 'no-cache' },
     });
     if (res.ok) {
-      const messages = await res.json();
+      let messages = await res.json();
       if (messages && typeof messages === 'object' && Object.keys(messages).length > 0) {
-        return { locale: safeLocale, messages };
+        // API'den gelen veriler düz (flat) olabilir (örn: "courses.level_beginner").
+        // Next-intl iç içe (nested) yapı bekler. Bu yüzden noktaları parse ediyoruz.
+        const unflattened: Record<string, any> = {};
+        for (const key in messages) {
+          const value = messages[key];
+          if (key.includes('.')) {
+            const parts = key.split('.');
+            let current = unflattened;
+            for (let i = 0; i < parts.length - 1; i++) {
+              if (!current[parts[i]]) current[parts[i]] = {};
+              current = current[parts[i]];
+            }
+            current[parts[parts.length - 1]] = value;
+          } else {
+            unflattened[key] = value;
+          }
+        }
+        // Eğer API hem nested hem flat dönüyorsa, deep merge gerekebilir ama basitçe
+        // unflattened yapıyı kullanmak genellikle yeterlidir.
+        // Ancak mevcut yapıda "courses" gibi anahtarlar zaten nested ise, yukarıdaki döngü
+        // onları zaten unflattened["courses"] = ... diye alacak.
+        // Tek sorun: "courses" hem obje hem de "courses.level" diye string key gelirse çakışma olabilir.
+        // Bu yüzden güvenli bir merge yapalım.
+
+        const deepMerge = (target: any, source: any) => {
+          for (const key in source) {
+            if (source[key] instanceof Object && key in target) {
+              Object.assign(source[key], deepMerge(target[key], source[key]));
+            }
+          }
+          Object.assign(target || {}, source);
+          return target;
+        };
+
+        // Basit çözüm: Önce API'den gelen her şeyi işle.
+        // Eğer Backend zaten nested ve flat karışık gönderiyorsa, bunu düzeltmek gerekir.
+        // Şimdilik sadece nokta içerenleri yuvalayalım (nested hale getirelim).
+
+        // Daha sağlam bir unflatten fonksiyonu:
+        const result: any = {};
+        for (const [k, v] of Object.entries(messages)) {
+          const parts = k.split('.');
+          let current = result;
+          for (let i = 0; i < parts.length - 1; i++) {
+            const part = parts[i];
+            if (!(part in current) || typeof current[part] !== 'object') {
+              // Eğer burası daha önce string olarak tanımlandıysa, objeye çevir (bu nadir olur)
+              // Ama genelde "common": {...} vardır, sonra "common.newKey" gelir.
+              // Bu durumda current[part] zaten dolu bir objedir, dokunma.
+              if (!current[part]) current[part] = {};
+            }
+            current = current[part];
+          }
+          current[parts[parts.length - 1]] = v;
+        }
+
+        return { locale: safeLocale, messages: result };
       }
     }
   } catch {

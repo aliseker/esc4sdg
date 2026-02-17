@@ -2,7 +2,7 @@
  * Public courses API – list, detail, enroll, progress, certificates.
  * Uses same backend as authApi.
  */
-import { API_BASE } from './authApi';
+import { API_BASE, readErrorMessage, handleUser401 } from './authApi';
 
 export type CourseListItem = {
   id: number;
@@ -16,6 +16,8 @@ export type CourseListItem = {
   imageUrl: string | null;
   hasCertificate: boolean;
   lessonCount: number;
+  ratingCount: number;
+  averageRating: number;
 };
 
 export type CourseModule = {
@@ -44,6 +46,9 @@ export type CourseDetail = {
   hasCertificate: boolean;
   sectionCount: number;
   lessonCount: number;
+  ratingCount: number;
+  averageRating: number;
+  userRating?: number | null;
   modules: CourseModule[];
 };
 
@@ -65,6 +70,7 @@ export async function getMyCourses(token: string, lang?: string): Promise<MyCour
   const res = await fetch(`${API_BASE}/api/courses/my-courses${q}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
+  if (res.status === 401) handleUser401();
   if (!res.ok) return [];
   return res.json();
 }
@@ -92,7 +98,8 @@ export async function enrollCourse(courseId: number, token: string): Promise<voi
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
   });
-  if (!res.ok) throw new Error('Enroll failed');
+  if (res.status === 401) handleUser401();
+  if (!res.ok) throw new Error(await readErrorMessage(res));
 }
 
 export async function getCourseProgress(courseId: number, token: string): Promise<{
@@ -107,6 +114,7 @@ export async function getCourseProgress(courseId: number, token: string): Promis
   const res = await fetch(`${API_BASE}/api/courses/${courseId}/progress`, {
     headers: { Authorization: `Bearer ${token}` },
   });
+  if (res.status === 401) handleUser401();
   if (!res.ok) throw new Error('Failed to load progress');
   return res.json();
 }
@@ -121,6 +129,7 @@ export async function completeModuleItem(
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ scorePercent }),
   });
+  if (res.status === 401) handleUser401();
   if (!res.ok) throw new Error('Failed to complete');
   return res.json();
 }
@@ -146,6 +155,7 @@ export async function getModuleItemContent(
   const res = await fetch(`${API_BASE}/api/courses/${courseId}/items/${itemId}${q}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
+  if (res.status === 401) handleUser401();
   if (!res.ok) throw new Error('Failed to load content');
   return res.json();
 }
@@ -163,6 +173,7 @@ export async function getMyCertificates(token: string, lang?: string): Promise<C
   const res = await fetch(`${API_BASE}/api/certificates${q}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
+  if (res.status === 401) handleUser401();
   if (!res.ok) return [];
   return res.json();
 }
@@ -183,6 +194,18 @@ export async function getCertificate(
   const res = await fetch(`${API_BASE}/api/certificates/${id}${q}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
+  if (res.status === 401) handleUser401();
   if (!res.ok) throw new Error('Certificate not found');
+  return res.json();
+}
+
+export async function rateCourse(courseId: number, score: number, token: string): Promise<{ averageRating: number; ratingCount: number }> {
+  const res = await fetch(`${API_BASE}/api/courses/${courseId}/rate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ score }),
+  });
+  if (res.status === 401) handleUser401();
+  if (!res.ok) throw new Error(await readErrorMessage(res));
   return res.json();
 }

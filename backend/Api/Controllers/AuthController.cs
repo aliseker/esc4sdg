@@ -2,10 +2,12 @@ using backend.Api.Data;
 using backend.Api.Entities;
 using backend.Api.Models.Auth;
 using backend.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace backend.Api.Controllers;
 
@@ -33,11 +35,14 @@ public sealed class AuthController : ControllerBase
         try
         {
             var normalizedEmail = request.Email?.Trim().ToUpperInvariant() ?? string.Empty;
-            var normalizedUsername = request.Username?.Trim().ToUpperInvariant() ?? string.Empty;
+            var username = string.IsNullOrWhiteSpace(request.Username)
+                ? request.Email.Split('@')[0].Trim()
+                : request.Username.Trim();
+            var normalizedUsername = username.ToUpperInvariant();
 
-            if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
+            if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
             {
-                return BadRequest("Email, username and password are required.");
+                return BadRequest("Email and password are required.");
             }
 
             if (await _context.Users.AnyAsync(u => u.NormalizedEmail == normalizedEmail || u.NormalizedUsername == normalizedUsername))
@@ -56,7 +61,7 @@ public sealed class AuthController : ControllerBase
                 Id = Guid.NewGuid(),
                 Email = request.Email.Trim(),
                 NormalizedEmail = normalizedEmail,
-                Username = request.Username.Trim(),
+                Username = username,
                 NormalizedUsername = normalizedUsername,
                 DisplayName = string.IsNullOrWhiteSpace(request.DisplayName) ? null : request.DisplayName.Trim(),
                 Gender = string.IsNullOrWhiteSpace(request.Gender) ? null : request.Gender.Trim(),
@@ -112,5 +117,24 @@ public sealed class AuthController : ControllerBase
             user.Role?.Name ?? RoleNames.User);
 
         return Ok(response);
+    }
+
+    [HttpPut("profile")]
+    [Authorize]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+    {
+        var userId = User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier)
+                     ?? User.FindFirstValue("sub");
+        if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var userGuid))
+            return Unauthorized();
+
+        var user = await _context.Users.FindAsync(userGuid);
+        if (user is null) return NotFound();
+
+        if (!string.IsNullOrWhiteSpace(request.DisplayName))
+            user.DisplayName = request.DisplayName.Trim();
+
+        await _context.SaveChangesAsync();
+        return Ok(new { user.DisplayName });
     }
 }

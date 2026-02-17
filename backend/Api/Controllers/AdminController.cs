@@ -31,11 +31,20 @@ public sealed class AdminController : ControllerBase
     {
         var coursesCount = await _context.Courses.CountAsync(cancellationToken);
         var usersCount = await _context.Users.CountAsync(cancellationToken);
+        var projectsCount = await _context.Projects.CountAsync(cancellationToken);
+        var partnersCount = await _context.Partners.CountAsync(cancellationToken);
+        var languagesCount = await _context.Languages.CountAsync(cancellationToken);
+        var socialLinksCount = await _context.SocialLinks.CountAsync(cancellationToken);
+
         return Ok(new
         {
             message = "OK",
             courses = coursesCount,
             users = usersCount,
+            projects = projectsCount,
+            partners = partnersCount,
+            languages = languagesCount,
+            socialLinks = socialLinksCount,
             timestamp = DateTime.UtcNow.ToString("O")
         });
     }

@@ -43,6 +43,15 @@ function getAllItemsInOrder(course: CourseDetail): { id: number; title: string; 
   return (course.modules ?? []).flatMap((m) => m.items ?? []);
 }
 
+function fixHtmlImageUrls(html: string): string {
+  if (!html) return html;
+  // Rewrite relative img src to use API_BASE
+  return html.replace(
+    /(<img\s[^>]*src=["'])(?!https?:\/\/)([^"']+)(["'])/gi,
+    (_, prefix, src, suffix) => `${prefix}${API_BASE}/${src.replace(/^\//, '')}${suffix}`
+  );
+}
+
 function TextContentView({ textContent, onViewed, locale }: { textContent: string; onViewed: () => void; locale: string }) {
   const called = useRef(false);
   useEffect(() => {
@@ -55,10 +64,62 @@ function TextContentView({ textContent, onViewed, locale }: { textContent: strin
   }, [onViewed]);
   return (
     <div className="space-y-3">
-      <div className="whitespace-pre-wrap text-stone-700">{textContent}</div>
+      <div
+        className="prose prose-stone max-w-none text-stone-700"
+        dangerouslySetInnerHTML={{ __html: fixHtmlImageUrls(textContent) }}
+      />
       <p className="text-xs text-stone-500">
         {locale === 'tr' ? 'İçerik görüntülendiğinde otomatik tamamlanır.' : 'Content is marked complete when viewed.'}
       </p>
+    </div>
+  );
+}
+
+function VideoTimerComplete({ durationSeconds, onComplete, locale }: { durationSeconds: number; onComplete: () => void; locale: string }) {
+  const [remaining, setRemaining] = useState(durationSeconds);
+  const completedRef = useRef(false);
+
+  useEffect(() => {
+    if (durationSeconds <= 0) {
+      if (!completedRef.current) { completedRef.current = true; onComplete(); }
+      return;
+    }
+    setRemaining(durationSeconds);
+    completedRef.current = false;
+    const interval = setInterval(() => {
+      setRemaining((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          if (!completedRef.current) { completedRef.current = true; onComplete(); }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [durationSeconds, onComplete]);
+
+  if (remaining <= 0) {
+    return (
+      <p className="text-xs text-green-600 font-semibold mt-2">
+        ✓ {locale === 'tr' ? 'Video tamamlandı.' : 'Video completed.'}
+      </p>
+    );
+  }
+
+  const mins = Math.floor(remaining / 60);
+  const secs = remaining % 60;
+  const progress = durationSeconds > 0 ? ((durationSeconds - remaining) / durationSeconds) * 100 : 0;
+
+  return (
+    <div className="mt-3 space-y-2">
+      <div className="flex items-center justify-between text-xs text-stone-500">
+        <span>{locale === 'tr' ? 'Video süresi dolunca tamamlanacak' : 'Will complete when video duration ends'}</span>
+        <span className="font-mono font-semibold text-stone-700">{mins}:{secs.toString().padStart(2, '0')}</span>
+      </div>
+      <div className="w-full h-1.5 bg-stone-200 rounded-full overflow-hidden">
+        <div className="h-full bg-teal-500 rounded-full transition-all duration-1000" style={{ width: `${progress}%` }} />
+      </div>
     </div>
   );
 }
@@ -79,6 +140,7 @@ export function CourseItemClient({ courseSlug, itemId: itemIdProp }: { courseSlu
     totalItems: number;
     hasCertificate: boolean;
     completed: boolean;
+    completedItemIds: number[];
   } | null>(null);
   const completedSentRef = useRef(false);
 
@@ -91,8 +153,8 @@ export function CourseItemClient({ courseSlug, itemId: itemIdProp }: { courseSlu
       .then((res) => {
         setProgress((p) =>
           p
-            ? { ...p, completedCount: res.completedCount, totalItems: res.totalItems, hasCertificate: res.completedCount >= res.totalItems ? true : p.hasCertificate, completed: res.completedCount >= res.totalItems }
-            : { completedCount: res.completedCount, totalItems: res.totalItems, hasCertificate: res.completedCount >= res.totalItems, completed: res.completedCount >= res.totalItems }
+            ? { ...p, completedCount: res.completedCount, totalItems: res.totalItems, hasCertificate: res.completedCount >= res.totalItems ? true : p.hasCertificate, completed: res.completedCount >= res.totalItems, completedItemIds: [...(p.completedItemIds || []), itemId] }
+            : { completedCount: res.completedCount, totalItems: res.totalItems, hasCertificate: res.completedCount >= res.totalItems, completed: res.completedCount >= res.totalItems, completedItemIds: [itemId] }
         );
       })
       .catch(() => { completedSentRef.current = false; });
@@ -165,6 +227,7 @@ export function CourseItemClient({ courseSlug, itemId: itemIdProp }: { courseSlu
             totalItems: res.totalItems,
             hasCertificate: true,
             completed: true,
+            completedItemIds: [...(p?.completedItemIds || []), itemId]
           }));
         } else {
           setProgress((p) => p ? { ...p, completedCount: res.completedCount, totalItems: res.totalItems } : null);
@@ -196,6 +259,12 @@ export function CourseItemClient({ courseSlug, itemId: itemIdProp }: { courseSlu
   const questions: QuizQuestion[] = parseQuizJson(content.quizDataJson ?? '');
   const passPercent = content.passScorePercent ?? 70;
   const passed = quizScore !== null && quizScore >= passPercent;
+
+  const isCompleted = progress?.completedItemIds?.includes(itemId) ?? false;
+  // If mustWatch is true, user must complete the item to proceed.
+  // Exception: If it's a quiz, 'completing' will handle the transition, but we generally want to block 'Next' until passed.
+  // Actually, for Quiz, we usually rely on the 'Submit' button. The 'Next' button is for navigation.
+  const canProceed = !content.mustWatch || isCompleted;
 
   return (
     <div className="min-h-screen bg-stone-50 pb-16">
@@ -247,14 +316,25 @@ export function CourseItemClient({ courseSlug, itemId: itemIdProp }: { courseSlu
                 }
                 if (embedUrl && (embedUrl.includes('youtube.com/embed') || embedUrl.includes('player.vimeo.com'))) {
                   return (
-                    <div className="aspect-video rounded-xl overflow-hidden bg-stone-900">
-                      <iframe
-                        src={embedUrl}
-                        title={content.title}
-                        className="w-full h-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
+                    <div className="space-y-1">
+                      <div className="aspect-video rounded-xl overflow-hidden bg-stone-900">
+                        <iframe
+                          src={embedUrl}
+                          title={content.title}
+                          className="w-full h-full"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      </div>
+                      {content.mustWatch ? (
+                        <VideoTimerComplete
+                          durationSeconds={content.videoDurationSeconds || 5}
+                          onComplete={markItemComplete}
+                          locale={locale}
+                        />
+                      ) : (
+                        <TextContentView textContent="" onViewed={markItemComplete} locale={locale} />
+                      )}
                     </div>
                   );
                 }
@@ -388,8 +468,13 @@ export function CourseItemClient({ courseSlug, itemId: itemIdProp }: { courseSlu
           )}
           {nextItem ? (
             <Link
-              href={`/courses/${courseSlug}/item/${nextItem.id}`}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-teal-600 text-white font-semibold hover:bg-teal-700"
+              href={canProceed ? `/courses/${courseSlug}/item/${nextItem.id}` : '#'}
+              aria-disabled={!canProceed}
+              onClick={(e) => !canProceed && e.preventDefault()}
+              className={`inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all ${canProceed
+                ? 'bg-teal-600 text-white hover:bg-teal-700'
+                : 'bg-stone-200 text-stone-400 cursor-not-allowed'
+                }`}
             >
               {nextItem.title}
               <ArrowRight className="w-4 h-4" />

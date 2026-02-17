@@ -31,10 +31,11 @@ public sealed class CoursesController : ControllerBase
                 c.Category,
                 c.Level,
                 c.DurationMinutes,
-                c.InstructorName,
                 c.ImageUrl,
                 c.HasCertificate,
-                LessonCount = c.Modules.SelectMany(m => m.Items).Count()
+                LessonCount = c.Modules.SelectMany(m => m.Items).Count(),
+                RatingCount = c.Ratings.Count(),
+                AverageRating = c.Ratings.Average(r => (double?)r.Score) ?? 0
             })
             .ToListAsync(cancellationToken);
         return Ok(courses);
@@ -51,6 +52,7 @@ public sealed class CoursesController : ControllerBase
             .Include(c => c.Modules)
             .ThenInclude(m => m.Items.OrderBy(i => i.SortOrder))
             .ThenInclude(i => i.Translations)
+            .Include(c => c.Ratings)
             .AsSplitQuery()
             .FirstOrDefaultAsync(c => c.Slug == slug, cancellationToken);
 
@@ -100,9 +102,57 @@ public sealed class CoursesController : ControllerBase
             course.HasCertificate,
             SectionCount = course.Modules.Count,
             LessonCount = course.Modules.SelectMany(m => m.Items).Count(),
-            Modules = modules
+            Modules = modules,
+            RatingCount = course.Ratings.Count,
+            AverageRating = course.Ratings.Any() ? course.Ratings.Average(r => r.Score) : 0,
+            UserRating = await GetUserRating(course.Id, cancellationToken)
         });
     }
+
+    private async Task<int?> GetUserRating(int courseId, CancellationToken ct)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var userGuid)) return null;
+        var rating = await _context.Ratings.FirstOrDefaultAsync(r => r.CourseId == courseId && r.UserId == userGuid, ct);
+        return rating?.Score;
+    }
+
+    [HttpPost("{id:int}/rate")]
+    [Authorize]
+    public async Task<IActionResult> Rate(int id, [FromBody] RateRequest req, CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var userGuid))
+            return Unauthorized();
+
+        var enrolled = await _context.UserCourseEnrollments.AnyAsync(e => e.CourseId == id && e.UserId == userGuid, cancellationToken);
+        if (!enrolled) return BadRequest("Only enrolled users can rate.");
+
+        if (req.Score < 1 || req.Score > 5) return BadRequest("Score must be between 1 and 5.");
+
+        var rating = await _context.Ratings.FirstOrDefaultAsync(r => r.CourseId == id && r.UserId == userGuid, cancellationToken);
+        if (rating == null)
+        {
+            rating = new Rating { CourseId = id, UserId = userGuid, Score = req.Score, CreatedAt = DateTime.UtcNow };
+            _context.Ratings.Add(rating);
+        }
+        else
+        {
+            rating.Score = req.Score;
+            rating.CreatedAt = DateTime.UtcNow;
+        }
+        await _context.SaveChangesAsync(cancellationToken);
+
+        // Return updated stats
+        var ratings = await _context.Ratings.Where(r => r.CourseId == id).ToListAsync(cancellationToken);
+        return Ok(new
+        {
+            AverageRating = ratings.Any() ? ratings.Average(r => r.Score) : 0,
+            RatingCount = ratings.Count
+        });
+    }
+
+    public class RateRequest { public int Score { get; set; } }
 
     [HttpPost("{courseId:int}/enroll")]
     [Authorize]

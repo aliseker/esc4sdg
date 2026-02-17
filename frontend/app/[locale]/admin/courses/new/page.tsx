@@ -7,6 +7,8 @@ import {
   adminCourseCreate,
   adminUploadCourseCover,
   adminUploadCourseMaterial,
+
+  adminSiteTranslationsGet,
   API_BASE,
   type Language,
   type AdminCoursePayload,
@@ -62,16 +64,20 @@ export default function AdminCourseNewPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [slug, setSlug] = useState('');
-  const [category, setCategory] = useState('');
-  const LEVEL_OPTIONS = ['Beginner', 'Intermediate', 'Advanced'] as const;
-  const [level, setLevel] = useState<string>('Beginner');
+
   const [imageUrl, setImageUrl] = useState('');
   const [coverUploading, setCoverUploading] = useState(false);
   const [activeLangId, setActiveLangId] = useState<number | null>(null);
   const [courseTranslations, setCourseTranslations] = useState<{ languageId: number; title: string; summary: string; category: string; level: string }[]>([]);
   const [modules, setModules] = useState<ModuleForm[]>([]);
+
   const [addItemModuleIdx, setAddItemModuleIdx] = useState<number | null>(null);
   const [uploadingItem, setUploadingItem] = useState<{ modIdx: number; itemIdx: number } | null>(null);
+  const [levelLabels, setLevelLabels] = useState<Record<string, string>>({
+    Beginner: 'Beginner',
+    Intermediate: 'Intermediate',
+    Advanced: 'Advanced',
+  });
 
   useEffect(() => {
     adminLanguagesGetAll()
@@ -83,16 +89,29 @@ export default function AdminCourseNewPage() {
       })
       .catch(() => setError('Diller yüklenemedi'))
       .finally(() => setLoading(false));
+
   }, []);
 
   useEffect(() => {
-    if (activeLangId == null || courseTranslations.length === 0) return;
-    const t = courseTranslations.find((x) => x.languageId === activeLangId);
-    if (t) {
-      setCategory(t.category);
-      setLevel(t.level);
+    if (activeLangId) {
+      adminSiteTranslationsGet(activeLangId)
+        .then((data) => {
+          const newLabels: Record<string, string> = {
+            Beginner: 'Beginner',
+            Intermediate: 'Intermediate',
+            Advanced: 'Advanced',
+          };
+          data.items.forEach((item) => {
+            if (item.key === 'courses.level_beginner' && item.value?.trim()) newLabels.Beginner = item.value;
+            if (item.key === 'courses.level_intermediate' && item.value?.trim()) newLabels.Intermediate = item.value;
+            if (item.key === 'courses.level_advanced' && item.value?.trim()) newLabels.Advanced = item.value;
+          });
+          setLevelLabels(newLabels);
+        })
+        .catch((err) => console.error('Translation fetch error:', err));
     }
-  }, [activeLangId, courseTranslations]);
+  }, [activeLangId]);
+
 
   const addModule = () => {
     setModules((m) => [...m, defaultModuleForm(languages)]);
@@ -151,8 +170,7 @@ export default function AdminCourseNewPage() {
 
   const buildPayload = (): AdminCoursePayload => ({
     slug: slug.trim() || 'yeni-kurs',
-    category: category.trim() || undefined,
-    level: level.trim() || undefined,
+
     durationMinutes: 0,
     imageUrl: imageUrl.trim() || undefined,
     hasCertificate: true,
@@ -265,32 +283,33 @@ export default function AdminCourseNewPage() {
               />
             </label>
             <label>
-              <span className="text-sm text-stone-600">Kategori</span>
+              <span className="text-sm text-stone-600">Kategori {activeLangId && `(${languages.find(l => l.id === activeLangId)?.code})`}</span>
               <input
                 type="text"
-                value={category}
+                value={activeLangId ? courseTranslations.find(t => t.languageId === activeLangId)?.category || '' : ''}
                 onChange={(e) => {
-                  const v = e.target.value;
-                  setCategory(v);
-                  if (activeLangId != null) setCourseTranslations((prev) => prev.map((t) => (t.languageId === activeLangId ? { ...t, category: v } : t)));
+                  if (activeLangId) {
+                    setCourseTranslations(prev => prev.map(t => t.languageId === activeLangId ? { ...t, category: e.target.value } : t));
+                  }
                 }}
                 className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2"
               />
             </label>
             <label>
-              <span className="text-sm text-stone-600">Seviye</span>
+              <span className="text-sm text-stone-600">Seviye {activeLangId && `(${languages.find(l => l.id === activeLangId)?.code})`}</span>
               <select
-                value={level}
+                value={activeLangId ? courseTranslations.find(t => t.languageId === activeLangId)?.level || 'Beginner' : 'Beginner'}
                 onChange={(e) => {
-                  const v = e.target.value;
-                  setLevel(v);
-                  if (activeLangId != null) setCourseTranslations((prev) => prev.map((t) => (t.languageId === activeLangId ? { ...t, level: v } : t)));
+                  if (activeLangId) {
+                    setCourseTranslations(prev => prev.map(t => t.languageId === activeLangId ? { ...t, level: e.target.value } : t));
+                  }
                 }}
                 className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 bg-white"
               >
-                {LEVEL_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
+
+                <option value="Beginner">{levelLabels.Beginner}</option>
+                <option value="Intermediate">{levelLabels.Intermediate}</option>
+                <option value="Advanced">{levelLabels.Advanced}</option>
               </select>
             </label>
             <div className="sm:col-span-2 text-sm text-stone-500">
@@ -598,7 +617,7 @@ export default function AdminCourseNewPage() {
                     {item.type === 'Text' && (
                       <div className="pt-2 border-t border-stone-200">
                         <div className="pt-2 border-t border-stone-200">
-                          <label className="block">
+                          <div className="block">
                             <span className="text-sm text-stone-600 block mb-2">Metin içerik (araçlar listesi vb.)</span>
                             <RichTextEditor
                               value={item.textContent ?? ''}
@@ -607,7 +626,7 @@ export default function AdminCourseNewPage() {
                               minHeight="300px"
                               onUploadImage={adminUploadCourseMaterial}
                             />
-                          </label>
+                          </div>
                         </div>
                       </div>
                     )}

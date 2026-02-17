@@ -30,6 +30,7 @@ public class AppDbContext : DbContext
     public DbSet<ProjectTranslation> ProjectTranslations => Set<ProjectTranslation>();
     public DbSet<ProjectGalleryImage> ProjectGalleryImages => Set<ProjectGalleryImage>();
     public DbSet<SiteTranslation> SiteTranslations => Set<SiteTranslation>();
+    public DbSet<Rating> Ratings => Set<Rating>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -123,6 +124,16 @@ public class AppDbContext : DbContext
             .HasOne(g => g.Project)
             .WithMany(p => p.GalleryImages)
             .HasForeignKey(g => g.ProjectId)
+            .OnDelete(Microsoft.EntityFrameworkCore.DeleteBehavior.Cascade);
+
+        builder.Entity<Rating>()
+            .HasIndex(r => new { r.UserId, r.CourseId })
+            .IsUnique();
+
+        builder.Entity<Rating>()
+            .HasOne(r => r.Course)
+            .WithMany(c => c.Ratings)
+            .HasForeignKey(r => r.CourseId)
             .OnDelete(Microsoft.EntityFrameworkCore.DeleteBehavior.Cascade);
     }
 }

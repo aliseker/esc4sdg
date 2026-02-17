@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { Clock, Star, ArrowRight, BookOpen, Sparkles } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
-import { courses as mockCourses } from '@/lib/mockCourses';
 import { getCoursesList, type CourseListItem } from '@/lib/coursesApi';
 import { API_BASE } from '@/lib/authApi';
 import AnimateInView from '@/components/UI/AnimateInView';
@@ -18,6 +17,7 @@ type FeaturedCourseItem = {
   level: string;
   duration: string;
   imageUrl?: string | null;
+  rating: number;
 };
 
 function featuredImageSrc(item: FeaturedCourseItem) {
@@ -71,7 +71,7 @@ const FeaturedCourseCard = ({
             </span>
             <span className="flex items-center gap-1.5 text-amber-300">
               <Star className="w-4 h-4 fill-current" />
-              <span className="text-sm font-bold">4.8</span>
+              <span className="text-sm font-bold">{course.rating.toFixed(1)}</span>
             </span>
           </div>
           <span className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white text-teal-700 font-bold text-sm w-fit group-hover:bg-amber-100 group-hover:text-teal-800 transition-colors shadow-lg">
@@ -128,7 +128,7 @@ const BoldCourseCard = ({
           <div className="relative p-6 h-full flex flex-col justify-end">
             <div className="absolute top-4 right-4 flex items-center gap-1.5 text-amber-400">
               <Star className="w-4 h-4 fill-current" />
-              <span className="text-sm font-bold">4.8</span>
+              <span className="text-sm font-bold">{course.rating.toFixed(1)}</span>
             </div>
             <span className="absolute top-4 left-4 px-2.5 py-1 rounded-lg bg-white/20 backdrop-blur-sm text-white text-xs font-bold">
               {course.level}
@@ -156,19 +156,11 @@ function toFeaturedItem(c: CourseListItem): FeaturedCourseItem {
     level: c.level ?? 'Beginner',
     duration: `${c.durationMinutes} dk`,
     imageUrl: c.imageUrl,
+    rating: c.averageRating,
   };
 }
 
-function mockToFeaturedItem(c: (typeof mockCourses)[number], locale: 'tr' | 'en'): FeaturedCourseItem {
-  return {
-    slug: c.slug,
-    title: c.title[locale],
-    summary: c.summary[locale],
-    level: c.level,
-    duration: c.duration,
-    imageUrl: undefined,
-  };
-}
+
 
 const FeaturedCourses = () => {
   const locale = useLocale() as 'tr' | 'en';
@@ -180,11 +172,14 @@ const FeaturedCourses = () => {
     getCoursesList(locale).then(setApiCourses);
   }, [locale]);
 
-  const fromApi = apiCourses.map(toFeaturedItem);
-  const fromMock = mockCourses.map((c) => mockToFeaturedItem(c, locale));
-  const combined = [...fromApi, ...fromMock.filter((m) => !fromApi.some((a) => a.slug === m.slug))];
-  const featuredSlice = combined.slice(0, 5);
-  const [featured, ...rest] = featuredSlice;
+  // Sort by rating (desc) then by Id (desc) ~ newest
+  const sortedCourses = [...apiCourses].sort((a, b) => {
+    if (b.averageRating !== a.averageRating) return b.averageRating - a.averageRating;
+    return b.id - a.id;
+  });
+
+  const featuredCourses = sortedCourses.slice(0, 5).map(toFeaturedItem);
+  const [featured, ...rest] = featuredCourses;
 
   return (
     <section className="relative pt-12 lg:pt-16 pb-24 lg:pb-28 overflow-hidden">

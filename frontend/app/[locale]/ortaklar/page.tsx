@@ -3,7 +3,7 @@ import { Link } from '@/i18n/navigation';
 import { Users, Sparkles } from 'lucide-react';
 import AnimateInView from '@/components/UI/AnimateInView';
 import type { Locale } from '@/lib/partners';
-import { PartnersGrid } from '@/components/Partners/PartnersGrid';
+import PartnersGrid from '@/components/Partners/PartnersGrid';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,7 +58,7 @@ export default async function OrtaklarPage() {
       </section>
 
       {/* Partner kartları – Hakkımızda/Proje bölüm stili */}
-      <PartnersGrid locale={locale} />
+      <PartnersGrid />
     </div>
   );
 }

@@ -80,6 +80,24 @@ export default function AdminTranslationsPage() {
     const selectedCode = languages.find((l) => l.id === selectedLangId)?.code ?? undefined;
     adminSiteTranslationsGet(selectedLangId, referenceLangId ?? undefined, selectedCode)
       .then((d) => {
+        // Eksik olan course level anahtarlarını varsayılan olarak ekle
+        const requiredKeys = [
+          { key: 'courses.level_beginner', value: 'Beginner' },
+          { key: 'courses.level_intermediate', value: 'Intermediate' },
+          { key: 'courses.level_advanced', value: 'Advanced' }
+        ];
+
+        requiredKeys.forEach(req => {
+          if (!d.items.find(i => i.key === req.key)) {
+            d.items.push({
+              key: req.key,
+              label: req.key,
+              value: req.value, // Varsayılan değer, kullanıcı editörde değiştirebilir
+              referenceValue: req.value
+            });
+          }
+        });
+
         setData(d);
         setEdits({});
         const initial: Record<string, string> = {};

@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Menu, X, Globe, LogIn, UserPlus, ChevronDown, Gamepad2, User, LogOut, Award, BookOpen } from 'lucide-react';
+import { Menu, X, Globe, LogIn, UserPlus, ChevronDown, Gamepad2, User, LogOut, Award, BookOpen, Pencil, Check } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
-import { getUserToken, getUserInfo, clearUserToken, AUTH_CHANGE_EVENT } from '@/lib/authApi';
+import { getUserToken, getUserInfo, setUserInfo, clearUserToken, updateProfile, AUTH_CHANGE_EVENT } from '@/lib/authApi';
 
 import { getLanguages, type LanguageItem } from '@/lib/publicApi';
 
@@ -19,6 +19,7 @@ function getLocalizedPath(pathname: string, locale: string): string {
   return locale === 'tr' ? `/tr${segment}` : `/${locale}${segment}`;
 }
 
+
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
@@ -26,6 +27,8 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [locales, setLocales] = useState(DEFAULT_LOCALES);
+  const [editingName, setEditingName] = useState(false);
+  const [editNameValue, setEditNameValue] = useState('');
   const langRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const locale = useLocale() as string;
@@ -63,8 +66,8 @@ const Navbar = () => {
       if (langRef.current && !langRef.current.contains(e.target as Node)) setLangOpen(false);
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) setProfileOpen(false);
     };
-    document.addEventListener('click', close);
-    return () => document.removeEventListener('click', close);
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
   }, []);
 
   const handleLogout = () => {
@@ -179,27 +182,54 @@ const Navbar = () => {
                 </button>
                 {profileOpen && (() => {
                   const userInfo = getUserInfo();
+                  const handleSaveName = async () => {
+                    if (!editNameValue.trim()) return;
+                    const token = getUserToken();
+                    if (!token) return;
+                    try {
+                      await updateProfile(token, editNameValue.trim());
+                      setUserInfo({ ...getUserInfo(), displayName: editNameValue.trim() });
+                      setEditingName(false);
+                    } catch { /* ignore */ }
+                  };
                   return (
                     <div className="absolute right-0 top-full mt-2 w-64 py-0 bg-white rounded-2xl shadow-xl shadow-stone-300/40 border-2 border-stone-100 ring-4 ring-amber-500/10 overflow-hidden">
                       <div className="px-4 py-3 bg-stone-50/80 border-b border-stone-100">
                         <p className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">{t('profile')}</p>
-                        <div className="space-y-1.5 text-sm text-stone-700">
-                          {userInfo?.displayName && (
-                            <p className="font-semibold text-stone-900 truncate" title={userInfo.displayName}>
-                              {userInfo.displayName}
-                            </p>
+                        <div className="space-y-1.5 text-sm text-stone-700" onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); }}>
+                          {editingName ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                autoFocus
+                                value={editNameValue}
+                                onChange={(e) => setEditNameValue(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleSaveName(); if (e.key === 'Escape') setEditingName(false); }}
+                                className="flex-1 px-2 py-1 text-sm border border-teal-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-400 text-stone-900"
+                              />
+                              <button onClick={handleSaveName} className="p-1 text-teal-600 hover:text-teal-700">
+                                <Check className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <p className={`truncate flex-1 ${userInfo?.displayName ? 'font-semibold text-stone-900' : 'text-stone-400 font-medium'}`} title={userInfo?.displayName}>
+                                {userInfo?.displayName || (locale === 'tr' ? 'Ad Soyad' : 'Full Name')}
+                              </p>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setEditNameValue(userInfo?.displayName || ''); setEditingName(true); }}
+                                className="p-0.5 text-stone-400 hover:text-teal-600 transition-colors"
+                                title="Edit name"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           )}
                           {userInfo?.email && (
                             <p className="truncate" title={userInfo.email}>
                               {userInfo.email}
                             </p>
                           )}
-                          {userInfo?.username && (
-                            <p className="text-stone-600 truncate" title={userInfo.username}>
-                              @{userInfo.username}
-                            </p>
-                          )}
-                          {!userInfo?.email && !userInfo?.username && !userInfo?.displayName && (
+                          {!userInfo?.email && !userInfo?.displayName && (
                             <p className="text-stone-500 italic">{t('profileNoInfo')}</p>
                           )}
                         </div>

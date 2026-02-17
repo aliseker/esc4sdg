@@ -31,15 +31,14 @@ public sealed class ProjectsController : ControllerBase
                 p.CoverImageUrl,
                 p.SortOrder,
                 p.CreatedAt,
-                // Fallback: Requested -> EN -> TR -> First Available
-                Title = p.Translations.FirstOrDefault(t => t.LanguageId == languageId).Title
-                        ?? p.Translations.FirstOrDefault(t => t.LanguageId == enId).Title
-                        ?? p.Translations.FirstOrDefault(t => t.LanguageId == trId).Title
-                        ?? p.Translations.FirstOrDefault().Title ?? "",
-                Subtitle = p.Translations.FirstOrDefault(t => t.LanguageId == languageId).Subtitle
-                        ?? p.Translations.FirstOrDefault(t => t.LanguageId == enId).Subtitle
-                        ?? p.Translations.FirstOrDefault(t => t.LanguageId == trId).Subtitle
-                        ?? p.Translations.FirstOrDefault().Subtitle ?? "",
+                Title = p.Translations.Where(t => t.LanguageId == languageId && !string.IsNullOrWhiteSpace(t.Title)).Select(t => t.Title).FirstOrDefault()
+                        ?? p.Translations.Where(t => t.LanguageId == enId && !string.IsNullOrWhiteSpace(t.Title)).Select(t => t.Title).FirstOrDefault()
+                        ?? p.Translations.Where(t => t.LanguageId == trId && !string.IsNullOrWhiteSpace(t.Title)).Select(t => t.Title).FirstOrDefault()
+                        ?? p.Translations.Where(t => !string.IsNullOrWhiteSpace(t.Title)).Select(t => t.Title).FirstOrDefault() ?? "",
+                Subtitle = p.Translations.Where(t => t.LanguageId == languageId && !string.IsNullOrWhiteSpace(t.Subtitle)).Select(t => t.Subtitle).FirstOrDefault()
+                        ?? p.Translations.Where(t => t.LanguageId == enId && !string.IsNullOrWhiteSpace(t.Subtitle)).Select(t => t.Subtitle).FirstOrDefault()
+                        ?? p.Translations.Where(t => t.LanguageId == trId && !string.IsNullOrWhiteSpace(t.Subtitle)).Select(t => t.Subtitle).FirstOrDefault()
+                        ?? p.Translations.Where(t => !string.IsNullOrWhiteSpace(t.Subtitle)).Select(t => t.Subtitle).FirstOrDefault() ?? "",
                 GalleryImages = p.GalleryImages.Select(g => new { g.Id, g.ImageUrl, g.SortOrder, g.Caption }).ToList()
             })
             .ToListAsync(cancellationToken);
@@ -60,10 +59,10 @@ public sealed class ProjectsController : ControllerBase
             .FirstOrDefaultAsync(x => x.Slug == slug, cancellationToken);
         if (p == null) return NotFound();
 
-        var t = p.Translations.FirstOrDefault(t => t.LanguageId == languageId)
-                ?? p.Translations.FirstOrDefault(t => t.LanguageId == enId)
-                ?? p.Translations.FirstOrDefault(t => t.LanguageId == trId)
-                ?? p.Translations.FirstOrDefault();
+        var t = p.Translations.FirstOrDefault(t => t.LanguageId == languageId && !string.IsNullOrWhiteSpace(t.Title))
+                ?? p.Translations.FirstOrDefault(t => t.LanguageId == enId && !string.IsNullOrWhiteSpace(t.Title))
+                ?? p.Translations.FirstOrDefault(t => t.LanguageId == trId && !string.IsNullOrWhiteSpace(t.Title))
+                ?? p.Translations.FirstOrDefault(t => !string.IsNullOrWhiteSpace(t.Title));
 
         return Ok(new
         {
@@ -93,10 +92,10 @@ public sealed class ProjectsController : ControllerBase
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (p == null) return NotFound();
 
-        var t = p.Translations.FirstOrDefault(t => t.LanguageId == languageId)
-                ?? p.Translations.FirstOrDefault(t => t.LanguageId == enId)
-                ?? p.Translations.FirstOrDefault(t => t.LanguageId == trId)
-                ?? p.Translations.FirstOrDefault();
+        var t = p.Translations.FirstOrDefault(t => t.LanguageId == languageId && !string.IsNullOrWhiteSpace(t.Title))
+                ?? p.Translations.FirstOrDefault(t => t.LanguageId == enId && !string.IsNullOrWhiteSpace(t.Title))
+                ?? p.Translations.FirstOrDefault(t => t.LanguageId == trId && !string.IsNullOrWhiteSpace(t.Title))
+                ?? p.Translations.FirstOrDefault(t => !string.IsNullOrWhiteSpace(t.Title));
 
         return Ok(new
         {

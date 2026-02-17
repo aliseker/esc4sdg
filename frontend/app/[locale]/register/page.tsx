@@ -3,14 +3,14 @@
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Link, useRouter } from '@/i18n/navigation';
-import { UserPlus, Mail, Lock, User, ArrowRight, AtSign, GraduationCap } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, ArrowRight, GraduationCap } from 'lucide-react';
 import { API_BASE, registerUser, setUserToken, setUserInfo } from '@/lib/authApi';
 
 export default function RegisterPage() {
   const t = useTranslations('auth');
   const nav = useTranslations('nav');
   const [displayName, setDisplayName] = useState('');
-  const [username, setUsername] = useState('');
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -33,7 +33,6 @@ export default function RegisterPage() {
     try {
       const data = await registerUser({
         email,
-        username,
         password,
         displayName,
         gender: gender || undefined,
@@ -43,7 +42,6 @@ export default function RegisterPage() {
       setUserToken(data.token);
       setUserInfo({
         email: data.email ?? undefined,
-        username: data.username ?? undefined,
         displayName: displayName || undefined,
       });
       router.push('/courses');
@@ -126,26 +124,7 @@ export default function RegisterPage() {
                   />
                 </div>
               </div>
-              <div>
-                <label htmlFor="reg-username" className="block text-sm font-medium text-stone-700 mb-1.5">
-                  {t('username')}
-                </label>
-                <div className="relative">
-                  <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400 pointer-events-none" />
-                  <input
-                    id="reg-username"
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 text-stone-900 bg-stone-50/80 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-colors placeholder:text-stone-400"
-                    placeholder={t('usernamePlaceholder')}
-                    minLength={4}
-                    required
-                    autoCapitalize="none"
-                    autoCorrect="off"
-                  />
-                </div>
-              </div>
+
               <div>
                 <label htmlFor="reg-email" className="block text-sm font-medium text-stone-700 mb-1.5">
                   {t('email')}

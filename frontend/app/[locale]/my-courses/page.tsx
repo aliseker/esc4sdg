@@ -11,9 +11,11 @@ export default function MyCoursesPage() {
   const locale = useLocale();
   const [list, setList] = useState<MyCourseItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasToken, setHasToken] = useState<boolean | null>(null);
 
   useEffect(() => {
     const token = getUserToken();
+    setHasToken(!!token);
     if (!token) {
       setLoading(false);
       return;
@@ -24,7 +26,7 @@ export default function MyCoursesPage() {
       .finally(() => setLoading(false));
   }, [locale]);
 
-  if (!getUserToken()) {
+  if (hasToken === false) {
     return (
       <div className="min-h-screen bg-stone-50 pt-24 pb-16">
         <div className="max-w-2xl mx-auto px-4 text-center">

@@ -27,6 +27,10 @@ export function LoginClient({ returnUrl }: { returnUrl?: string }) {
       router.push(target);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Login failed';
+      if (msg === 'Invalid credentials.') {
+        setError(t('invalidCredentials'));
+        return;
+      }
       const isNetwork = msg === 'Failed to fetch' || msg.toLowerCase().includes('fetch');
       setError(isNetwork ? `${t('connectionError')} (${API_BASE})` : msg);
     } finally {

@@ -86,9 +86,7 @@ public sealed class AdminPartnersController : ControllerBase
             if (input == null) return BadRequest(new { message = "Geçersiz istek." });
             var name = (input.Name ?? "").Trim();
             if (string.IsNullOrEmpty(name)) return BadRequest(new { message = "Ad zorunludur." });
-            if (InputSanitizer.ContainsDangerousChars(name) || InputSanitizer.ContainsDangerousChars(input.Country)
-                || InputSanitizer.ContainsDangerousChars(input.Website) || InputSanitizer.ContainsDangerousChars(input.LogoUrl))
-                return BadRequest(new { message = "Geçersiz karakter içeriyor." });
+            // Removed restrictive DangerousChars check to prevent false positives during copy-paste
             if (input.Website != null && !string.IsNullOrWhiteSpace(input.Website) && !InputSanitizer.IsValidUrl(input.Website.Trim()))
                 return BadRequest(new { message = "Web sitesi URL http veya https ile başlamalı." });
 
@@ -118,8 +116,7 @@ public sealed class AdminPartnersController : ControllerBase
                 foreach (var t in input.Translations)
                 {
                     if (!validLanguageIds.Contains(t.LanguageId)) continue;
-                    if (InputSanitizer.ContainsDangerousChars(t.Description))
-                        return BadRequest(new { message = "Açıklamada geçersiz karakter var." });
+                    // Descriptions can contain HTML from rich text editor, so we skip DangerousChars check here
                     _context.PartnerTranslations.Add(new PartnerTranslation { PartnerId = p.Id, LanguageId = t.LanguageId, Description = t.Description ?? "" });
                 }
                 await _context.SaveChangesAsync(cancellationToken);
@@ -140,9 +137,7 @@ public sealed class AdminPartnersController : ControllerBase
         if (input == null) return BadRequest(new { message = "Geçersiz istek." });
         var p = await _context.Partners.Include(x => x.Translations).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (p == null) return NotFound();
-        if (InputSanitizer.ContainsDangerousChars(input.Name) || InputSanitizer.ContainsDangerousChars(input.Country)
-            || InputSanitizer.ContainsDangerousChars(input.Website) || InputSanitizer.ContainsDangerousChars(input.LogoUrl))
-            return BadRequest(new { message = "Geçersiz karakter içeriyor." });
+        // Removed restrictive DangerousChars check to prevent false positives during copy-paste
         if (input.Website != null && !string.IsNullOrWhiteSpace(input.Website) && !InputSanitizer.IsValidUrl(input.Website.Trim()))
             return BadRequest(new { message = "Web sitesi URL http veya https ile başlamalı." });
         p.Name = input.Name.Trim();
@@ -158,9 +153,8 @@ public sealed class AdminPartnersController : ControllerBase
         {
             foreach (var t in input.Translations)
             {
-                if (InputSanitizer.ContainsDangerousChars(t.Description))
-                    return BadRequest(new { message = "Açıklamada geçersiz karakter var." });
-                _context.PartnerTranslations.Add(new PartnerTranslation { PartnerId = p.Id, LanguageId = t.LanguageId, Description = t.Description });
+                // Descriptions can contain HTML from rich text editor
+                _context.PartnerTranslations.Add(new PartnerTranslation { PartnerId = p.Id, LanguageId = t.LanguageId, Description = t.Description ?? "" });
             }
         }
         await _context.SaveChangesAsync(cancellationToken);
