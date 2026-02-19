@@ -286,7 +286,7 @@
     "password": "Password",
     "loginButton": "Sign in",
     "backToSite": "Back to site",
-    "hint": "Default: admin@esc4sdg.local / Admin123! (backend appsettings.json)",
+    "hint": "Enter your admin panel credentials.",
     "connectionError": "Could not reach backend. Is it running? In terminal: cd backend/ESC4SDG.Api and dotnet run"
   }
 }

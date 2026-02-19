@@ -243,15 +243,33 @@ public sealed class CoursesController : ControllerBase
             {
                 UserId = userGuid,
                 ModuleItemId = itemId,
-                CompletedAt = DateTime.UtcNow,
+                CompletedAt = null, // Set below if passed
                 ScorePercent = body?.ScorePercent
             };
             _context.UserModuleItemProgresses.Add(progress);
         }
         else
         {
-            progress.CompletedAt = DateTime.UtcNow;
             if (body?.ScorePercent != null) progress.ScorePercent = body.ScorePercent;
+        }
+
+        // Check if passed
+        var passed = true;
+        if (item.Type == ModuleItemType.Quiz && item.PassScorePercent.HasValue)
+        {
+            if ((progress.ScorePercent ?? 0) < item.PassScorePercent.Value)
+            {
+                passed = false;
+            }
+        }
+
+        if (passed)
+        {
+             // Only update CompletedAt if it wasn't already completed
+             if (progress.CompletedAt == null)
+             {
+                 progress.CompletedAt = DateTime.UtcNow;
+             }
         }
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -291,7 +309,55 @@ public sealed class CoursesController : ControllerBase
             }
         }
 
-        return Ok(new { completed = true, completedCount, totalItems });
+        return Ok(new { completed = passed, completedCount, totalItems });
+    }
+
+    [HttpPost("{courseId:int}/claim-certificate")]
+    [Authorize]
+    public async Task<IActionResult> ClaimCertificate(int courseId, CancellationToken cancellationToken)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var userGuid))
+            return Unauthorized();
+
+        var enrolled = await _context.UserCourseEnrollments
+            .AnyAsync(e => e.UserId == userGuid && e.CourseId == courseId, cancellationToken);
+        if (!enrolled) return BadRequest("Not enrolled.");
+
+        var totalItems = await _context.CourseModules
+            .Where(m => m.CourseId == courseId)
+            .SelectMany(m => m.Items)
+            .CountAsync(cancellationToken);
+
+        var completedCount = await _context.UserModuleItemProgresses
+            .CountAsync(p => p.UserId == userGuid && p.ModuleItem!.Module!.CourseId == courseId && p.CompletedAt != null, cancellationToken);
+
+        if (totalItems == 0 || completedCount < totalItems)
+        {
+            return BadRequest("Course not completed yet.");
+        }
+
+        var course = await _context.Courses.FindAsync(new object[] { courseId }, cancellationToken);
+        if (course?.HasCertificate != true) return BadRequest("This course does not offer a certificate.");
+
+        var existing = await _context.Certificates
+            .FirstOrDefaultAsync(c => c.UserId == userGuid && c.CourseId == courseId, cancellationToken);
+
+        if (existing != null)
+        {
+            return Ok(new { certificateId = existing.Id, issuedAt = existing.IssuedAt });
+        }
+
+        var cert = new Certificate
+        {
+            UserId = userGuid,
+            CourseId = courseId,
+            IssuedAt = DateTime.UtcNow
+        };
+        _context.Certificates.Add(cert);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return Ok(new { certificateId = cert.Id, issuedAt = cert.IssuedAt });
     }
 
     [HttpGet("{courseId:int}/items/{itemId:int}")]

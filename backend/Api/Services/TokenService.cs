@@ -17,7 +17,7 @@ public sealed class TokenService
         _settings = jwtOptions?.Value ?? new JwtSettings();
     }
 
-    public AuthResponse CreateToken(string subject, string email, string username, string role)
+    public AuthResponse CreateToken(string subject, string email, string username, string role, string? displayName)
     {
         var claims = new List<Claim>
         {
@@ -26,6 +26,11 @@ public sealed class TokenService
             new(ClaimTypes.Name, username),
             new(ClaimTypes.Role, role)
         };
+
+        if (!string.IsNullOrEmpty(displayName))
+        {
+            claims.Add(new Claim("DisplayName", displayName));
+        }
 
         var secret = _settings.Secret ?? JwtSettings.DefaultSecret;
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
@@ -45,7 +50,8 @@ public sealed class TokenService
             ExpiresAt = expires,
             Role = role,
             Email = email,
-            Username = username
+            Username = username,
+            DisplayName = displayName
         };
     }
 }

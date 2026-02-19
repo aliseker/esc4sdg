@@ -111,12 +111,12 @@ export function LoginClient({ returnUrl }: { returnUrl?: string }) {
                   <label htmlFor="login-password" className="block text-sm font-medium text-stone-700">
                     {t('password')}
                   </label>
-                  <button
-                    type="button"
+                  <Link
+                    href="/forgot-password"
                     className="text-xs font-medium text-teal-600 hover:text-teal-700 hover:underline"
                   >
                     {t('forgotPassword')}
-                  </button>
+                  </Link>
                 </div>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400 pointer-events-none" />

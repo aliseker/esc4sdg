@@ -16,7 +16,9 @@
     "myCourses": "Kurslarım",
     "myCertificates": "Sertifikalarım",
     "profileNoInfo": "Bilgi yok",
-    "language": "Dil"
+    "language": "Dil",
+    "certificateName": "Sertifika İsmi",
+    "certificateNamePlaceholder": "Sertifikada görünecek isim"
   },
   "home": {
     "badge": "Escape4SDG",
@@ -286,7 +288,7 @@
     "password": "Şifre",
     "loginButton": "Giriş Yap",
     "backToSite": "Siteye dön",
-    "hint": "Varsayılan: admin@esc4sdg.local / Admin123! (backend appsettings.json)",
+    "hint": "Admin paneline giriş bilgilerinizi girin.",
     "connectionError": "Backend'e bağlanılamadı. Backend çalışıyor mu? Terminalde: cd backend/ESC4SDG.Api ve dotnet run"
   }
 }

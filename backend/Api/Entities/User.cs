@@ -38,5 +38,9 @@ public class User
     public int RoleId { get; set; }
     public Role? Role { get; set; }
 
+    [MaxLength(200)]
+    public string? PasswordResetToken { get; set; }
+    public DateTime? PasswordResetTokenExpiresAt { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

@@ -13,6 +13,7 @@ const USER_INFO_KEY = 'esc4sdg_user_info';
 export type UserInfo = {
   email?: string;
   displayName?: string;
+  username?: string;
 };
 
 export function getUserToken(): string | null {
@@ -135,4 +136,22 @@ export async function updateProfile(token: string, displayName: string): Promise
   }
 
   return res.json();
+}
+
+export async function forgotPassword(email: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) throw new Error(await readErrorMessage(res));
+}
+
+export async function resetPassword(email: string, token: string, newPassword: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/auth/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, token, newPassword }),
+  });
+  if (!res.ok) throw new Error(await readErrorMessage(res));
 }

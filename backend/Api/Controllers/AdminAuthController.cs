@@ -4,12 +4,14 @@ using backend.Api.Models.Admin;
 using backend.Api.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.Api.Controllers;
 
 [ApiController]
 [Route("api/admin/auth")]
+[EnableRateLimiting("auth")]
 public sealed class AdminAuthController : ControllerBase
 {
     private readonly AppDbContext _context;
@@ -26,9 +28,24 @@ public sealed class AdminAuthController : ControllerBase
         _tokenService = tokenService;
     }
 
+    /// <summary>
+    /// Register a new admin account.
+    /// - If no admins exist yet (first-time setup), anyone can create the first admin.
+    /// - After the first admin exists, only authenticated admins can create new admins.
+    /// </summary>
     [HttpPost("register")]
     public async Task<IActionResult> Register(AdminCreateRequest request)
     {
+        var anyAdminExists = await _context.Admins.AnyAsync();
+        if (anyAdminExists)
+        {
+            // Require valid Admin JWT for subsequent registrations
+            if (!User.Identity?.IsAuthenticated ?? true)
+                return Unauthorized(new { message = "Authentication required." });
+            if (!User.IsInRole(RoleNames.Admin))
+                return Forbid();
+        }
+
         var normalizedUsername = request.Username.Trim().ToUpperInvariant();
         var normalizedEmail = request.Email.Trim().ToUpperInvariant();
 
@@ -84,7 +101,8 @@ public sealed class AdminAuthController : ControllerBase
             admin.Id.ToString(),
             admin.Email,
             admin.Username,
-            RoleNames.Admin);
+            RoleNames.Admin,
+            admin.Username);
 
         return Ok(response);
     }

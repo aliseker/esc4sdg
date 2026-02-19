@@ -196,41 +196,46 @@ const Navbar = () => {
                     <div className="absolute right-0 top-full mt-2 w-64 py-0 bg-white rounded-2xl shadow-xl shadow-stone-300/40 border-2 border-stone-100 ring-4 ring-amber-500/10 overflow-hidden">
                       <div className="px-4 py-3 bg-stone-50/80 border-b border-stone-100">
                         <p className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-2">{t('profile')}</p>
-                        <div className="space-y-1.5 text-sm text-stone-700" onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); }}>
-                          {editingName ? (
-                            <div className="flex items-center gap-1">
-                              <input
-                                autoFocus
-                                value={editNameValue}
-                                onChange={(e) => setEditNameValue(e.target.value)}
-                                onKeyDown={(e) => { if (e.key === 'Enter') handleSaveName(); if (e.key === 'Escape') setEditingName(false); }}
-                                className="flex-1 px-2 py-1 text-sm border border-teal-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-400 text-stone-900"
-                              />
-                              <button onClick={handleSaveName} className="p-1 text-teal-600 hover:text-teal-700">
-                                <Check className="w-4 h-4" />
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-1.5">
-                              <p className={`truncate flex-1 ${userInfo?.displayName ? 'font-semibold text-stone-900' : 'text-stone-400 font-medium'}`} title={userInfo?.displayName}>
-                                {userInfo?.displayName || (locale === 'tr' ? 'Ad Soyad' : 'Full Name')}
-                              </p>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setEditNameValue(userInfo?.displayName || ''); setEditingName(true); }}
-                                className="p-0.5 text-stone-400 hover:text-teal-600 transition-colors"
-                                title="Edit name"
-                              >
-                                <Pencil className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          )}
+
+                        <div className="mb-2">
+                          <p className="text-[10px] text-stone-500 mb-1">{t('certificateName')}:</p>
+                          <div className="space-y-1.5 text-sm text-stone-700" onClick={(e) => { e.stopPropagation(); e.nativeEvent.stopImmediatePropagation(); }}>
+                            {editingName ? (
+                              <div className="flex items-center gap-1">
+                                <input
+                                  autoFocus
+                                  value={editNameValue}
+                                  onChange={(e) => setEditNameValue(e.target.value)}
+                                  onKeyDown={(e) => { if (e.key === 'Enter') handleSaveName(); if (e.key === 'Escape') setEditingName(false); }}
+                                  placeholder={t('certificateNamePlaceholder')}
+                                  className="flex-1 px-2 py-1 text-sm border border-teal-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-teal-400 text-stone-900"
+                                />
+                                <button onClick={handleSaveName} className="p-1 text-teal-600 hover:text-teal-700">
+                                  <Check className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1.5">
+                                <p className={`truncate flex-1 ${userInfo?.displayName ? 'font-semibold text-stone-900' : 'text-stone-400 italic font-medium'}`} title={userInfo?.displayName}>
+                                  {userInfo?.displayName || t('certificateNamePlaceholder')}
+                                </p>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); setEditNameValue(userInfo?.displayName || ''); setEditingName(true); }}
+                                  className="p-0.5 text-stone-400 hover:text-teal-600 transition-colors"
+                                  title="Edit name"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5 text-sm text-stone-700">
                           {userInfo?.email && (
-                            <p className="truncate" title={userInfo.email}>
+                            <p className="truncate text-xs text-stone-500" title={userInfo.email}>
                               {userInfo.email}
                             </p>
-                          )}
-                          {!userInfo?.email && !userInfo?.displayName && (
-                            <p className="text-stone-500 italic">{t('profileNoInfo')}</p>
                           )}
                         </div>
                       </div>

@@ -1,3 +1,4 @@
+import SafeHtml from '@/components/SafeHtml';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
@@ -81,7 +82,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                             <h2 className="text-2xl font-bold text-stone-900 mb-6 border-l-4 border-orange-500 pl-6">{project.subtitle}</h2>
                             <div className="prose prose-stone max-w-none text-stone-600 leading-relaxed text-lg">
                                 {project.bodyHtml ? (
-                                    <div dangerouslySetInnerHTML={{ __html: project.bodyHtml }} />
+                                    <SafeHtml html={project.bodyHtml} />
                                 ) : (
                                     <p>{project.subtitle}</p>
                                 )}

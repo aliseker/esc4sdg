@@ -1,4 +1,5 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using backend.Api.Data;
 using backend.Api.Entities;
 using backend.Api.Services;
@@ -6,6 +7,7 @@ using backend.Api.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -17,6 +19,22 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Rate limiting for auth endpoints
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = 429;
+    options.AddFixedWindowLimiter("auth", opt =>
+    {
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.PermitLimit = 10;
+    });
+    options.AddFixedWindowLimiter("general", opt =>
+    {
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.PermitLimit = 60;
+    });
+});
 
 builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
 {
@@ -33,6 +51,9 @@ builder.Services.AddHttpClient<ITranslationApiService, TranslationApiService>();
 
 var jwtSection = builder.Configuration.GetSection(JwtSettings.SectionName);
 builder.Services.Configure<JwtSettings>(jwtSection);
+
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.AddTransient<EmailService>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -73,6 +94,17 @@ if (app.Environment.IsDevelopment())
         .AllowAnyHeader()
         .AllowAnyMethod());
 }
+else
+{
+    // Production: restrict CORS to your actual domain(s)
+    var allowedOrigins = builder.Configuration.GetSection("AllowedCorsOrigins").Get<string[]>()
+        ?? new[] { "https://escape4sdg.com", "https://www.escape4sdg.com" };
+    app.UseCors(policy => policy
+        .WithOrigins(allowedOrigins)
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials());
+}
 
 // 500 hatalarında JSON mesaj dön (pipeline'ın en dışında olsun ki tüm hataları yakalasın)
 app.Use(async (context, next) =>
@@ -86,19 +118,29 @@ app.Use(async (context, next) =>
         if (context.Response.HasStarted) throw;
         context.Response.StatusCode = 500;
         context.Response.ContentType = "application/json";
-        var msg = ex.InnerException?.Message ?? ex.Message;
+        var msg = app.Environment.IsDevelopment() 
+            ? (ex.InnerException?.Message ?? ex.Message) 
+            : "Bir sunucu hatası oluştu.";
         var stack = app.Environment.IsDevelopment() ? ex.StackTrace : null;
-        await context.Response.WriteAsJsonAsync(new { message = "Sunucu hatası: " + msg, stack });
+        await context.Response.WriteAsJsonAsync(new { message = msg, stack });
     }
 });
 
 app.Use(async (context, next) =>
 {
-    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
-    context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
-    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    // context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    // context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
+    // context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    // context.Response.Headers.Append("X-Frame-Options", "DENY");
+    // context.Response.Headers.Append("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    // context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+    context.Response.Headers.Append("Content-Security-Policy", "frame-ancestors *");
     await next();
 });
+
+
+app.UseRateLimiter();
+
 
 app.UseStaticFiles();
 app.UseAuthentication();

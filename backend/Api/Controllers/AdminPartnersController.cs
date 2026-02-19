@@ -171,7 +171,7 @@ public sealed class AdminPartnersController : ControllerBase
         return NoContent();
     }
 
-    private static readonly string[] AllowedImageExtensions = { ".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg" };
+    private static readonly string[] AllowedImageExtensions = { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
 
     [HttpPost("upload-logo")]
     public async Task<IActionResult> UploadLogo(IFormFile? file, CancellationToken cancellationToken)

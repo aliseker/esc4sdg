@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, ChevronUp, Lock, FileText, Video, HelpCircle, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronUp, Lock, FileText, Video, HelpCircle, ChevronRight, CheckCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
 import type { CourseDetail } from '@/lib/coursesApi';
@@ -12,18 +12,30 @@ export function CourseCurriculum({
   locale,
   courseSlug,
   isEnrolled,
+  completedItemIds,
 }: {
   course?: CourseDetail;
   mockCourse?: Course;
   locale: string;
   courseSlug?: string;
   isEnrolled?: boolean;
+  completedItemIds?: number[];
 }) {
   const [expanded, setExpanded] = useState<Set<number | string>>(new Set([0]));
 
   if (course) {
     const modules = course.modules ?? [];
-    const canOpenItems = Boolean(courseSlug && isEnrolled);
+
+    // Flatten items to find the next unlockable item
+    const allItems = modules.flatMap(m => m.items);
+    const completedSet = new Set(completedItemIds ?? []);
+
+    // Find the first item that is NOT completed
+    const firstIncompleteItem = allItems.find(i => !completedSet.has(i.id));
+    // If all are completed, no next item (or maybe just keep everything open)
+    // The "active" item is the first incomplete one.
+    const activeItemId = firstIncompleteItem?.id;
+
     return (
       <div className="rounded-2xl bg-white border border-stone-200 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-stone-100 flex flex-wrap items-center justify-between gap-4">
@@ -69,24 +81,32 @@ export function CourseCurriculum({
                 {isOpen && (
                   <div className="px-6 pb-4 pl-14 space-y-2">
                     {mod.items.map((item, itemIdx) => {
-                      const isFirstItem = idx === 0 && itemIdx === 0;
-                      const showAsLink = canOpenItems || isFirstItem;
-                      const itemHref = canOpenItems
+                      const isCompleted = completedSet.has(item.id);
+                      // Accessible if enrolled AND (completed OR it's the next active item)
+                      // If no active item found (all completed), then everything is accessible if enrolled.
+                      // If not enrolled, only first item of first module is accessible (as sample/preview logic if we had it, but mostly we force login).
+
+                      const isNextUp = item.id === activeItemId;
+                      const isUnlocked = isEnrolled && (isCompleted || isNextUp || !activeItemId);
+
+                      const showAsLink = isUnlocked;
+
+                      const itemHref = showAsLink
                         ? `/courses/${courseSlug}/item/${item.id}`
-                        : isFirstItem
-                          ? `/login?returnUrl=${encodeURIComponent(`/courses/${courseSlug}/item/${item.id}`)}`
-                          : null;
+                        : null;
                       const itemContent = (
                         <>
                           <div className="flex items-center gap-2 min-w-0">
-                            {item.type === 'Quiz' ? (
+                            {isCompleted ? (
+                              <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
+                            ) : item.type === 'Quiz' ? (
                               <HelpCircle className="w-4 h-4 text-amber-600 shrink-0" />
                             ) : item.type === 'Video' ? (
                               <Video className="w-4 h-4 text-teal-600 shrink-0" />
                             ) : (
                               <FileText className="w-4 h-4 text-stone-500 shrink-0" />
                             )}
-                            <span className={`text-sm font-medium truncate ${showAsLink ? 'text-stone-800 group-hover:text-teal-800' : 'text-stone-800'}`}>
+                            <span className={`text-sm font-medium truncate ${isCompleted ? 'text-green-700' : showAsLink ? 'text-stone-800 group-hover:text-teal-800' : 'text-stone-800'}`}>
                               {item.title}
                             </span>
                             {item.type === 'Quiz' && item.questionCount != null && (
@@ -95,7 +115,11 @@ export function CourseCurriculum({
                               </span>
                             )}
                           </div>
-                          {showAsLink ? (
+                          {isCompleted ? (
+                            <span className="text-xs font-bold text-green-600 px-2 py-0.5 bg-green-50 rounded-full">
+                              {locale === 'tr' ? 'Tamamlandı' : 'Done'}
+                            </span>
+                          ) : showAsLink ? (
                             <ChevronRight className="w-4 h-4 text-stone-400 shrink-0 group-hover:text-teal-600" />
                           ) : (
                             <Lock className="w-4 h-4 text-stone-400 shrink-0" />

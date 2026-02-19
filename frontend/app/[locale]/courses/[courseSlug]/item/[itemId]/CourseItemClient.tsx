@@ -9,6 +9,7 @@ import { getUserToken, API_BASE } from '@/lib/authApi';
 import { parseQuizJson, type QuizQuestion } from '@/components/Admin/QuizEditor';
 import { ArrowLeft, ArrowRight, Video, HelpCircle, FileText, FileUp, Award, RefreshCcw } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import DOMPurify from 'dompurify';
 
 type ItemContent = {
   id: number;
@@ -66,7 +67,7 @@ function TextContentView({ textContent, onViewed, locale }: { textContent: strin
     <div className="space-y-3">
       <div
         className="prose prose-stone max-w-none text-stone-700"
-        dangerouslySetInnerHTML={{ __html: fixHtmlImageUrls(textContent) }}
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(fixHtmlImageUrls(textContent)) }}
       />
       <p className="text-xs text-stone-500">
         {locale === 'tr' ? 'İçerik görüntülendiğinde otomatik tamamlanır.' : 'Content is marked complete when viewed.'}
@@ -161,6 +162,12 @@ export function CourseItemClient({ courseSlug, itemId: itemIdProp }: { courseSlu
   }, [itemId, token]);
 
   useEffect(() => {
+    // Reset state when navigating to a new item
+    setQuizSubmitted(false);
+    setQuizScore(null);
+    setQuizAnswers({});
+    setCompleting(false);
+
     if (!courseSlug || Number.isNaN(itemId)) {
       setLoading(false);
       return;
@@ -230,7 +237,12 @@ export function CourseItemClient({ courseSlug, itemId: itemIdProp }: { courseSlu
             completedItemIds: [...(p?.completedItemIds || []), itemId]
           }));
         } else {
-          setProgress((p) => p ? { ...p, completedCount: res.completedCount, totalItems: res.totalItems } : null);
+          setProgress((p) => p ? {
+            ...p,
+            completedCount: res.completedCount,
+            totalItems: res.totalItems,
+            completedItemIds: res.completed ? [...(p.completedItemIds || []), itemId] : p.completedItemIds
+          } : null);
         }
       })
       .catch(() => { })
@@ -261,10 +273,8 @@ export function CourseItemClient({ courseSlug, itemId: itemIdProp }: { courseSlu
   const passed = quizScore !== null && quizScore >= passPercent;
 
   const isCompleted = progress?.completedItemIds?.includes(itemId) ?? false;
-  // If mustWatch is true, user must complete the item to proceed.
-  // Exception: If it's a quiz, 'completing' will handle the transition, but we generally want to block 'Next' until passed.
-  // Actually, for Quiz, we usually rely on the 'Submit' button. The 'Next' button is for navigation.
-  const canProceed = !content.mustWatch || isCompleted;
+  // Block navigation if it's a Quiz and not completed, OR if mustWatch is true and not completed
+  const canProceed = (content.type === 'Quiz' ? isCompleted : !content.mustWatch || isCompleted);
 
   return (
     <div className="min-h-screen bg-stone-50 pb-16">
@@ -402,13 +412,19 @@ export function CourseItemClient({ courseSlug, itemId: itemIdProp }: { courseSlu
                           {locale === 'tr' ? 'Testi geçemediniz. Modülü tekrar etmek ister misiniz?' : 'You failed the quiz. Would you like to restart the module?'}
                         </p>
                         {firstItemOfModule && (
-                          <Link
-                            href={`/courses/${courseSlug}/item/${firstItemOfModule.id}`}
+                          <button
+                            onClick={() => {
+                              if (firstItemOfModule.id === itemId) {
+                                window.location.reload();
+                              } else {
+                                router.push(`/courses/${courseSlug}/item/${firstItemOfModule.id}`);
+                              }
+                            }}
                             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-100 text-orange-700 font-bold hover:bg-orange-200 self-start"
                           >
                             <RefreshCcw className="w-4 h-4" />
                             {locale === 'tr' ? 'Modüle Tekrar Başla' : 'Restart Module'}
-                          </Link>
+                          </button>
                         )}
                       </div>
                     )}

@@ -146,7 +146,8 @@ export default function CoursesPage() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedLevel, setSelectedLevel] = useState('All');
   const [selectedLanguage, setSelectedLanguage] = useState<'All' | string>('All');
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
+  const [sortBy, setSortBy] = useState('newest');
 
   useEffect(() => {
     getCoursesList(locale).then(setApiCourses);
@@ -156,23 +157,40 @@ export default function CoursesPage() {
     new Set([...(apiCourses.map((c) => c.category).filter(Boolean) as string[])])
   ).sort();
   const levels = ['Beginner', 'Intermediate', 'Advanced'] as const;
-  const languages = ['tr', 'en'] as const;
+  // const languages = ['tr', 'en'] as const;
+  const [languages, setLanguages] = useState<string[]>([]);
 
-  const filteredCourses = apiCourses.filter((course) => {
-    const title = course.title ?? course.slug;
-    const titleStr = typeof title === 'string' ? title : '';
-    const matchesSearch =
-      titleStr.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (course.instructorName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+  useEffect(() => {
+    import('@/lib/publicApi').then(({ getLanguages }) => {
+      getLanguages().then((langs) => {
+        setLanguages(langs.map((l) => l.code));
+      });
+    });
+  }, []);
 
-    const cat = course.category;
-    const matchesCategory = selectedCategory === 'All' || cat === selectedCategory;
-    const lvl = course.level;
-    const matchesLevel = selectedLevel === 'All' || lvl === selectedLevel;
-    // const langOk = selectedLanguage === 'All' || locale === selectedLanguage; // FIXME: API'de dil filtresi yoksa
-    const langOk = true;
-    return matchesSearch && matchesCategory && matchesLevel && langOk;
-  });
+  const filteredCourses = apiCourses
+    .filter((course) => {
+      const title = course.title ?? course.slug;
+      const titleStr = typeof title === 'string' ? title : '';
+      const matchesSearch =
+        titleStr.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (course.instructorName?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
+
+      const cat = course.category;
+      const matchesCategory = selectedCategory === 'All' || cat === selectedCategory;
+      const lvl = course.level;
+      const matchesLevel = selectedLevel === 'All' || lvl === selectedLevel;
+      // const langOk = selectedLanguage === 'All' || locale === selectedLanguage; // FIXME: API'de dil filtresi yoksa
+      const langOk = true;
+      return matchesSearch && matchesCategory && matchesLevel && langOk;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'rating') {
+        return b.averageRating - a.averageRating;
+      }
+      // Default: newest (by ID desc)
+      return b.id - a.id;
+    });
 
   return (
     <div className="min-h-screen bg-stone-50 overflow-hidden">
@@ -220,16 +238,26 @@ export default function CoursesPage() {
                     className="w-full pl-12 pr-4 py-3.5 border-2 border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all font-medium text-stone-800"
                   />
                 </div>
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className={`flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold transition-all ${showFilters
-                    ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/30'
-                    : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
-                    }`}
-                >
-                  <Filter className="w-5 h-5" />
-                  {t('filter')}
-                </button>
+                <div className="flex gap-2">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="px-4 py-3.5 border-2 border-stone-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 font-bold text-stone-700 bg-stone-50 cursor-pointer"
+                  >
+                    <option value="newest">{locale === 'tr' ? 'En Yeni' : 'Newest'}</option>
+                    <option value="rating">{locale === 'tr' ? 'En Yüksek Puan' : 'Highest Rated'}</option>
+                  </select>
+                  <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    className={`flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold transition-all ${showFilters
+                      ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/30'
+                      : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                      }`}
+                  >
+                    <Filter className="w-5 h-5" />
+                    {t('filter')}
+                  </button>
+                </div>
               </div>
 
               {showFilters && (

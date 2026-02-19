@@ -1,5 +1,6 @@
 'use client';
 
+import DOMPurify from 'dompurify';
 import { useEffect, useState } from 'react';
 import { Building2 } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
@@ -210,7 +211,7 @@ export default function PartnersGrid() {
                               <div className="flex-1">
                                 <div
                                   className="text-[17px] leading-[1.7] text-stone-700/90 text-center font-medium [&>p]:mb-4 [&>p:last-child]:mb-0 [&>strong]:text-[#1a1a1a] [&>strong]:font-black"
-                                  dangerouslySetInnerHTML={{ __html: partner.description }}
+                                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(partner.description) }}
                                 />
                               </div>
                             )}

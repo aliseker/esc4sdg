@@ -371,7 +371,10 @@ public sealed class AdminCoursesController : ControllerBase
         if (string.IsNullOrEmpty(course.ImageUrl)) return Ok(new { deleted = false });
         var webRoot = _env.WebRootPath ?? Path.Combine(_env.ContentRootPath, "wwwroot");
         var segment = course.ImageUrl.TrimStart('/');
-        var fullPath = Path.Combine(webRoot, segment);
+        var fullPath = Path.GetFullPath(Path.Combine(webRoot, segment));
+        // Path traversal protection
+        if (!fullPath.StartsWith(Path.GetFullPath(webRoot)))
+            return BadRequest(new { message = "Invalid file path." });
         if (System.IO.File.Exists(fullPath))
         {
             try { System.IO.File.Delete(fullPath); } catch { /* ignore */ }

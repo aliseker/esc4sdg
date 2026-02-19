@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useCallback, useEffect, useState } from 'react';
 import { useLocale } from 'next-intl';
 import { Link, useRouter } from '@/i18n/navigation';
-import { getCourseBySlug as getCourseApi, enrollCourse, getCourseProgress, rateCourse, type CourseDetail } from '@/lib/coursesApi';
+import { getCourseBySlug as getCourseApi, enrollCourse, getCourseProgress, rateCourse, claimCertificate, type CourseDetail } from '@/lib/coursesApi';
 import { StarRating } from '@/components/StarRating';
 
 import { getUserToken, API_BASE, AUTH_CHANGE_EVENT } from '@/lib/authApi';
@@ -28,6 +28,8 @@ export function CourseDetailClient({ courseSlug }: { courseSlug: string }) {
   const [enrollError, setEnrollError] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [completedItemIds, setCompletedItemIds] = useState<number[]>([]);
+  const [userHasCertificate, setUserHasCertificate] = useState(false);
   const [enrollmentCheckDone, setEnrollmentCheckDone] = useState(false);
 
   useEffect(() => {
@@ -61,10 +63,13 @@ export function CourseDetailClient({ courseSlug }: { courseSlug: string }) {
     getCourseProgress(courseApi.id, token)
       .then((p) => {
         setIsEnrolled(p.enrolled);
+        setCompletedItemIds(p.completedItemIds || []);
+        setUserHasCertificate(p.hasCertificate);
         setEnrollmentCheckDone(true);
       })
       .catch(() => {
         setIsEnrolled(false);
+        setCompletedItemIds([]);
         setEnrollmentCheckDone(true);
       });
   }, [courseApi, isLoggedIn]);
@@ -95,6 +100,25 @@ export function CourseDetailClient({ courseSlug }: { courseSlug: string }) {
       setStarting(false);
     }
   }, [courseApi, courseSlug, locale, router]);
+
+  const [claiming, setClaiming] = useState(false);
+  const handleClaimCertificate = async () => {
+    const token = getUserToken();
+    if (!token || !courseApi) return;
+    setClaiming(true);
+    try {
+      await claimCertificate(courseApi.id, token);
+      // Refresh progress to show certificate button
+      const p = await getCourseProgress(courseApi.id, token);
+      setCompletedItemIds(p.completedItemIds || []);
+      // force re-render or just reload page to be simple
+      window.location.reload();
+    } catch (e) {
+      alert('Sertifika alınamadı. Lütfen tüm dersleri tamamladığınızdan emin olun.');
+    } finally {
+      setClaiming(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -178,7 +202,13 @@ export function CourseDetailClient({ courseSlug }: { courseSlug: string }) {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row gap-8">
           <div id="mufredat" className="flex-1 scroll-mt-24">
             {fromApi && courseApi && (
-              <CourseCurriculum course={courseApi} locale={locale} courseSlug={courseSlug} isEnrolled={isEnrolled} />
+              <CourseCurriculum
+                course={courseApi}
+                locale={locale}
+                courseSlug={courseSlug}
+                isEnrolled={isEnrolled}
+                completedItemIds={completedItemIds}
+              />
             )}
           </div>
           <aside className="lg:w-80 shrink-0">
@@ -254,6 +284,31 @@ export function CourseDetailClient({ courseSlug }: { courseSlug: string }) {
               )}
               {fromApi && courseApi && isEnrolled ? (
                 (() => {
+                  if (userHasCertificate) {
+                    return (
+                      <Link
+                        href={`/courses/${courseSlug}/certificate`}
+                        className="mt-6 block w-full py-3.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-center transition-colors"
+                      >
+                        {locale === 'tr' ? 'Sertifikamı Göster' : 'View Certificate'}
+                      </Link>
+                    );
+                  }
+
+                  const isCompleted = completedItemIds.length >= (courseApi.lessonCount ?? 0) && (courseApi.lessonCount ?? 0) > 0;
+                  if (hasCertificate && isCompleted && !userHasCertificate) {
+                    return (
+                      <button
+                        type="button"
+                        onClick={handleClaimCertificate}
+                        disabled={claiming}
+                        className="mt-6 w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-center disabled:opacity-50 transition-colors"
+                      >
+                        {claiming ? '...' : locale === 'tr' ? 'Sertifikayı Al' : 'Claim Certificate'}
+                      </button>
+                    );
+                  }
+
                   const firstItem = courseApi.modules?.[0]?.items?.[0];
                   return firstItem ? (
                     <Link

@@ -1,11 +1,12 @@
 'use client';
 
-import { ArrowRight, Calendar, Sparkles, Layers } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
+import { ArrowRight, Calendar, Sparkles, Layers, Search, Filter } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
 import Image from 'next/image';
 import { Link } from '@/i18n/navigation';
 import AnimateInView from '@/components/UI/AnimateInView';
-import { type ProjectItem } from '@/lib/projects';
+import { type ProjectItem, getProjectsList } from '@/lib/projects';
 import { API_BASE } from '@/lib/authApi';
 import studyCover from '@/public/images/study.jpg';
 
@@ -59,52 +60,46 @@ const FeaturedProjectCard = ({ project, t, delay = 0 }: { project: ProjectItem; 
     );
 };
 
-/** Standard Project Card - Themed Gradients */
+/** Standard Project Card - Same wide horizontal layout as featured, with alternating theme colors */
 const StandardProjectCard = ({ project, t, delay = 0, themeIndex = 0 }: { project: ProjectItem; t: any; delay?: number; themeIndex?: number }) => {
     const themes = [
-        { grad: 'from-teal-500 via-emerald-500 to-teal-600', shadow: 'shadow-teal-500/30', hover: 'group-hover:shadow-teal-500/50' },
-        { grad: 'from-violet-500 via-purple-500 to-violet-600', shadow: 'shadow-violet-500/30', hover: 'group-hover:shadow-violet-500/50' },
+        { grad: 'from-orange-500 via-amber-500 to-orange-600', shadow: 'shadow-orange-500/30', hoverShadow: 'hover:shadow-orange-500/50', btn: 'bg-white text-orange-700 group-hover:bg-orange-50' },
+        { grad: 'from-teal-500 via-emerald-500 to-teal-600', shadow: 'shadow-teal-500/30', hoverShadow: 'hover:shadow-teal-500/50', btn: 'bg-white text-teal-700 group-hover:bg-teal-50' },
+        { grad: 'from-violet-500 via-purple-500 to-violet-600', shadow: 'shadow-violet-500/30', hoverShadow: 'hover:shadow-violet-500/50', btn: 'bg-white text-violet-700 group-hover:bg-violet-50' },
     ];
     const theme = themes[themeIndex % themes.length];
 
     return (
-        <AnimateInView animation="fade-up" delay={delay} className="h-full">
-            <Link href={`/proje/${project.slug}`} className="block h-full">
-                <div className={`group relative overflow-hidden rounded-[32px] bg-gradient-to-br ${theme.grad} shadow-xl ${theme.shadow} ${theme.hover} hover:-translate-y-2 transition-all duration-700 h-full flex flex-col`}>
-                    <div className="relative w-full h-52 overflow-hidden">
+        <AnimateInView animation="fade-up" delay={delay}>
+            <Link href={`/proje/${project.slug}`} className="block">
+                <div className={`group relative overflow-hidden rounded-[40px] bg-gradient-to-br ${theme.grad} p-0 min-h-[320px] flex flex-col lg:flex-row shadow-2xl ${theme.shadow} ${theme.hoverShadow} hover:-translate-y-2 transition-all duration-700`}>
+                    <div className="relative w-full lg:w-[45%] h-64 lg:h-auto overflow-hidden">
                         <Image
                             src={projectImageSrc(project.coverImageUrl)}
                             alt={project.title}
                             fill
                             className="object-cover group-hover:scale-110 transition-transform duration-1000"
-                            sizes="(max-width: 1024px) 100vw, 33vw"
+                            sizes="(max-width: 1024px) 100vw, 45vw"
                             unoptimized={!!project.coverImageUrl}
                         />
-                        <div className={`absolute inset-0 bg-gradient-to-t ${theme.grad} opacity-85 group-hover:opacity-75 transition-opacity`} />
                     </div>
-
-                    <div className="relative flex-1 p-8 flex flex-col -mt-10">
-                        <div className="h-14 w-14 rounded-2xl bg-white/20 backdrop-blur-md border border-white/20 flex items-center justify-center mb-6 shadow-lg">
-                            <Layers className="w-7 h-7 text-white" />
-                        </div>
-
-                        <h3 className="text-xl font-black text-white mb-3 group-hover:text-amber-50 transition-colors leading-tight line-clamp-2 tracking-tight">
+                    <div className="flex-1 p-8 sm:p-12 flex flex-col justify-center relative">
+                        <h3 className="text-3xl sm:text-4xl font-black text-white mb-4 leading-tight group-hover:text-amber-50 transition-colors tracking-tight">
                             {project.title}
                         </h3>
-                        <p className="text-white/90 text-[15px] mb-6 line-clamp-3 leading-relaxed font-medium">
-                            {project.subtitle}
-                        </p>
+                        <p className="text-white/90 text-[17px] mb-8 line-clamp-3 leading-relaxed font-medium">{project.subtitle}</p>
 
-                        <div className="mt-auto flex items-center justify-between pt-6 border-t border-white/10">
-                            <span className="flex items-center gap-2 text-white/70 text-xs font-bold uppercase tracking-wider">
-                                <Calendar className="w-3.5 h-3.5" />
+                        <div className="flex items-center gap-6 text-white/80 text-sm mb-8">
+                            <span className="flex items-center gap-2 font-bold">
+                                <Calendar className="w-4 h-4 text-white/60" />
                                 {new Date(project.createdAt).getFullYear()}
                             </span>
-                            <span className="flex items-center gap-1.5 text-white font-black text-sm group-hover:gap-3 transition-all">
-                                {t('details') || 'İncele'}
-                                <ArrowRight className="w-4 h-4" />
-                            </span>
                         </div>
+
+                        <span className={`inline-flex items-center gap-3 px-8 py-4 rounded-2xl ${theme.btn} font-[900] text-sm w-fit transition-all shadow-xl shadow-black/10`}>
+                            {t('details') || 'İncele'}
+                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                        </span>
                     </div>
                 </div>
             </Link>
@@ -112,10 +107,40 @@ const StandardProjectCard = ({ project, t, delay = 0, themeIndex = 0 }: { projec
     );
 };
 
-export default function ProjectListClient({ projects }: { projects: ProjectItem[] }) {
+export default function ProjectListClient({ projects: initialProjects }: { projects: ProjectItem[] }) {
     const t = useTranslations('projects');
+    const locale = useLocale();
+    const [projects, setProjects] = useState<ProjectItem[]>(initialProjects);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedLanguage, setSelectedLanguage] = useState(locale);
+    const [showFilters, setShowFilters] = useState(false);
 
-    if (projects.length === 0) {
+    // const languages = ['tr', 'en'] as const;
+    const [languages, setLanguages] = useState<string[]>([]);
+
+    useEffect(() => {
+        import('@/lib/publicApi').then(({ getLanguages }) => {
+            getLanguages().then((langs) => {
+                setLanguages(langs.map((l) => l.code));
+            });
+        });
+    }, []);
+
+    // Re-fetch when language changes
+    useEffect(() => {
+        getProjectsList(selectedLanguage).then(setProjects);
+    }, [selectedLanguage]);
+
+    const filteredProjects = projects.filter((project) => {
+        if (!searchTerm) return true;
+        const term = searchTerm.toLowerCase();
+        return (
+            project.title.toLowerCase().includes(term) ||
+            project.subtitle?.toLowerCase().includes(term)
+        );
+    });
+
+    if (initialProjects.length === 0 && projects.length === 0) {
         return (
             <section className="relative py-24 text-center">
                 <div className="max-w-4xl mx-auto px-4">
@@ -128,29 +153,84 @@ export default function ProjectListClient({ projects }: { projects: ProjectItem[
         );
     }
 
-    const featured = projects[0];
-    const rest = projects.slice(1);
+    const sorted = [...filteredProjects].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return (
-        <section className="relative py-16 lg:py-24 overflow-hidden">
+        <section className="relative pt-6 pb-16 lg:pt-8 lg:pb-24 overflow-hidden">
             {/* Background elements */}
             <div className="absolute inset-0 bg-dots opacity-20" />
             <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-orange-100/30 rounded-full blur-[120px] translate-x-1/2 -translate-y-1/2" />
             <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-teal-100/30 rounded-full blur-[120px] -translate-x-1/2 translate-y-1/2" />
 
             <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
-                    {featured && <FeaturedProjectCard project={featured} t={t} delay={0} />}
-                    {rest.map((project, index) => (
-                        <StandardProjectCard
-                            key={project.id}
-                            project={project}
-                            t={t}
-                            delay={(index + 1) * 50}
-                            themeIndex={index}
-                        />
-                    ))}
-                </div>
+                {/* Search & Filter Bar */}
+                <AnimateInView animation="fade-up" className="mb-10">
+                    <div className="bg-white rounded-2xl border-2 border-stone-100 shadow-xl shadow-stone-200/30 p-5">
+                        <div className="flex gap-3">
+                            <div className="flex-1 relative">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
+                                <input
+                                    type="text"
+                                    placeholder={locale === 'tr' ? 'Proje ara...' : 'Search projects...'}
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full pl-12 pr-4 py-3.5 border-2 border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all font-medium text-stone-800"
+                                />
+                            </div>
+                            <button
+                                onClick={() => setShowFilters(!showFilters)}
+                                className={`flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold transition-all ${showFilters
+                                    ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/30'
+                                    : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+                                    }`}
+                            >
+                                <Filter className="w-5 h-5" />
+                                {locale === 'tr' ? 'Filtre' : 'Filter'}
+                            </button>
+                        </div>
+
+                        {showFilters && (
+                            <div className="mt-6 pt-6 border-t border-stone-200 grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-up">
+                                <div>
+                                    <label className="block text-sm font-bold text-stone-700 mb-2">
+                                        {locale === 'tr' ? 'Dil' : 'Language'}
+                                    </label>
+                                    <select
+                                        value={selectedLanguage}
+                                        onChange={(e) => setSelectedLanguage(e.target.value)}
+                                        className="w-full px-4 py-3 border-2 border-stone-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 font-medium text-stone-800"
+                                    >
+                                        {languages.map((lang) => (
+                                            <option key={lang} value={lang}>{lang.toUpperCase()}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </AnimateInView>
+
+                {/* Project List */}
+                {sorted.length > 0 ? (
+                    <div className="space-y-8">
+                        {sorted.map((project, index) => (
+                            <StandardProjectCard
+                                key={project.id}
+                                project={project}
+                                t={t}
+                                delay={index * 50}
+                                themeIndex={index}
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-16">
+                        <Layers className="w-12 h-12 text-stone-300 mx-auto mb-4" />
+                        <p className="text-stone-500 font-medium">
+                            {locale === 'tr' ? 'Aramanızla eşleşen proje bulunamadı.' : 'No projects match your search.'}
+                        </p>
+                    </div>
+                )}
             </div>
         </section>
     );

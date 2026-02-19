@@ -58,44 +58,42 @@ const FeaturedProjectCard = ({ project, t, delay = 0 }: { project: ProjectItem; 
   );
 };
 
-/** Project card - gradient bg, icon focus */
+/** Project card - wide horizontal layout, gradient bg, clean image */
 const ProjectCard = ({ project, t, delay = 0, themeIndex = 0 }: {
   project: ProjectItem; t: any; delay?: number; themeIndex?: number;
 }) => {
-  const gradients = [
-    'from-teal-500 via-emerald-500 to-teal-600',
-    'from-violet-500 via-purple-500 to-violet-600',
+  const themes = [
+    { grad: 'from-teal-500 via-emerald-500 to-teal-600', shadow: 'shadow-teal-500/30', hoverShadow: 'hover:shadow-teal-500/50', btn: 'bg-white text-teal-700 group-hover:bg-teal-50' },
+    { grad: 'from-violet-500 via-purple-500 to-violet-600', shadow: 'shadow-violet-500/30', hoverShadow: 'hover:shadow-violet-500/50', btn: 'bg-white text-violet-700 group-hover:bg-violet-50' },
   ];
-  const shadows = ['shadow-teal-500/30', 'shadow-violet-500/30'];
-  const i = themeIndex % 2;
+  const theme = themes[themeIndex % 2];
   return (
-    <AnimateInView animation="fade-up" delay={delay} className="h-full">
-      <Link href={`/proje/${project.slug}`} className="block h-full">
-        <div className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradients[i]} p-0 shadow-xl ${shadows[i]} hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 h-full flex flex-col`}>
-          <div className="relative w-full h-48 flex-shrink-0">
+    <AnimateInView animation="fade-up" delay={delay}>
+      <Link href={`/proje/${project.slug}`} className="block">
+        <div className={`group relative overflow-hidden rounded-3xl bg-gradient-to-br ${theme.grad} p-0 min-h-[280px] flex flex-col sm:flex-row shadow-2xl ${theme.shadow} ${theme.hoverShadow} hover:-translate-y-1 transition-all duration-500`}>
+          <div className="relative w-full sm:w-2/5 h-56 sm:h-auto min-h-[200px] flex-shrink-0">
             <Image
               src={projectImageSrc(project.coverImageUrl)}
               alt=""
               fill
-              className="object-cover group-hover:scale-110 transition-transform duration-700"
-              sizes="(max-width: 1024px) 50vw, 33vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-700"
+              sizes="(max-width: 640px) 100vw, 40vw"
               unoptimized={!!project.coverImageUrl}
             />
-            <div className={`absolute inset-0 bg-gradient-to-t ${gradients[i]} opacity-80`} />
           </div>
-          <div className="relative flex-1 p-6 sm:p-8 flex flex-col -mt-12">
-            <h3 className="text-xl font-bold text-white mb-2 group-hover:text-amber-100 transition-colors leading-tight line-clamp-2">
+          <div className="flex-1 p-8 sm:p-10 flex flex-col justify-center relative">
+            <h3 className="text-2xl sm:text-3xl font-black text-white mb-2 leading-tight group-hover:text-amber-50 transition-colors">
               {project.title}
             </h3>
-            <p className="text-white/85 text-sm mb-5 line-clamp-3 leading-relaxed">
-              {project.subtitle}
-            </p>
-            <div className="flex items-center gap-2 text-white/80 text-sm mb-5 mt-auto">
-              <Calendar className="w-4 h-4 shrink-0" />
-              <span className="font-medium">{new Date(project.createdAt).getFullYear()}</span>
+            <p className="text-white/90 text-sm mb-6 line-clamp-3">{project.subtitle}</p>
+            <div className="flex items-center gap-4 text-white/80 text-sm mb-6">
+              <span className="flex items-center gap-1.5">
+                <Calendar className="w-4 h-4" />
+                {new Date(project.createdAt).getFullYear()}
+              </span>
             </div>
-            <span className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-white/20 backdrop-blur-sm text-white font-bold text-sm w-fit group-hover:bg-white/30 transition-colors">
-              {t('details')}
+            <span className={`inline-flex items-center gap-2 px-5 py-3 rounded-xl ${theme.btn} font-bold text-sm w-fit transition-colors shadow-lg`}>
+              {t('viewDetails')}
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </span>
           </div>
@@ -114,11 +112,10 @@ const FeaturedProjects = () => {
     getProjectsList(locale).then(setProjects);
   }, [locale]);
 
-  const sorted = [...projects].sort((a, b) => a.sortOrder - b.sortOrder);
-  const featured = sorted[0];
-  const rest = sorted.slice(1, 3);
+  const sorted = [...projects].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const displayProjects = sorted.slice(0, 3);
 
-  if (!featured && projects.length === 0) return null; // Don't hide completely if loading? Or maybe show skeleton. For now hide.
+  if (projects.length === 0) return null;
 
   return (
     <section className="relative pt-12 lg:pt-16 pb-24 lg:pb-28 overflow-hidden">
@@ -142,10 +139,10 @@ const FeaturedProjects = () => {
           </p>
         </AnimateInView>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-12">
-          {featured && <FeaturedProjectCard project={featured} t={t} delay={0} />}
-          {rest[0] && <ProjectCard project={rest[0]} t={t} delay={100} themeIndex={0} />}
-          {rest[1] && <ProjectCard project={rest[1]} t={t} delay={150} themeIndex={1} />}
+        <div className="space-y-6 mb-12">
+          {displayProjects.map((project, index) => (
+            <ProjectCard key={project.id} project={project} t={t} delay={index * 80} themeIndex={index} />
+          ))}
         </div>
 
         <AnimateInView animation="fade-up" delay={200} className="text-center">

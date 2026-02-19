@@ -17,7 +17,7 @@ const Hero = ({ languages = [] }: HeroProps) => {
     <section className="relative min-h-[85vh] flex items-center overflow-hidden">
       {/* Pac-Man animation (behind content) - do not modify */}
       <PacmanBackground />
-      
+
       {/* Colorful gradient layers - About style */}
       <div className="absolute inset-0 bg-gradient-to-br from-teal-500/10 via-emerald-50/60 to-amber-50/50" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_20%_120%,rgba(251,146,60,0.2),transparent_50%)]" />
@@ -35,10 +35,6 @@ const Hero = ({ languages = [] }: HeroProps) => {
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 lg:pt-12 pb-10 lg:pb-14 mt-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-20 items-center">
           <div className="text-center lg:text-left">
-            <p className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/80 backdrop-blur-sm text-stone-700 text-sm font-bold mb-8 border border-stone-200/80 shadow-lg shadow-stone-200/30 animate-fade-up animate-delay-0">
-              <Sparkles className="w-4 h-4 text-teal-500" />
-              {t('badge')}
-            </p>
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.05] mb-6 text-stone-900 animate-fade-up animate-delay-75">
               <span className="block">{t('title1')}</span>
               <span className="block mt-1 text-stone-800 animate-fade-up animate-delay-150">{t('title2')}</span>

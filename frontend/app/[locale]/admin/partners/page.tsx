@@ -342,9 +342,6 @@ export default function AdminPartnersPage() {
                   <p className="text-lg font-black text-stone-800 tracking-tight">{p.name}</p>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs font-bold text-stone-400 uppercase tracking-widest">{p.country || 'Belirtilmemiş'}</span>
-                    {p.website && (
-                      <span className="text-[10px] text-stone-300 font-black px-2 py-0.5 rounded bg-stone-100">PRO</span>
-                    )}
                   </div>
                 </div>
               </div>

@@ -209,3 +209,13 @@ export async function rateCourse(courseId: number, score: number, token: string)
   if (!res.ok) throw new Error(await readErrorMessage(res));
   return res.json();
 }
+
+export async function claimCertificate(courseId: number, token: string): Promise<{ certificateId: number; issuedAt: string }> {
+  const res = await fetch(`${API_BASE}/api/courses/${courseId}/claim-certificate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (res.status === 401) handleUser401();
+  if (!res.ok) throw new Error(await readErrorMessage(res));
+  return res.json();
+}
