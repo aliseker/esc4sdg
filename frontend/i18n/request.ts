@@ -54,8 +54,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
         messages = deepMerge(messages, unflattened);
       }
     }
-  } catch (error) {
-    console.error('Translation API error:', error);
+  } catch {
     // API hatasında sadece yerel dosyayı kullanmaya devam et
   }
 

@@ -24,8 +24,7 @@ export async function getProjectsList(lang: string): Promise<ProjectItem[]> {
     });
     if (!res.ok) return [];
     return res.json();
-  } catch (error) {
-    console.error('Failed to fetch projects:', error);
+  } catch {
     return [];
   }
 }
@@ -37,8 +36,7 @@ export async function getProjectBySlug(slug: string, lang: string): Promise<Proj
     });
     if (!res.ok) return null;
     return res.json();
-  } catch (error) {
-    console.error('Failed to fetch project:', error);
+  } catch {
     return null;
   }
 }

@@ -151,7 +151,7 @@ export function AdminCourseEditClient({ id }: { id: number }) {
           });
           setLevelLabels(newLabels);
         })
-        .catch((err) => console.error('Translation fetch error:', err));
+        .catch(() => {});
     }
   }, [activeLangId]);
 

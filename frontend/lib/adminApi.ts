@@ -559,7 +559,6 @@ export async function adminUploadCourseMaterial(file: File): Promise<{ url: stri
   const form = new FormData();
   form.append('file', file);
   const url = `${API_BASE}/api/admin/courses/upload-material-v2`;
-  console.log('Uploading material to:', url);
   const res = await fetch(url, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },

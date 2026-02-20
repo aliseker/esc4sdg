@@ -108,7 +108,7 @@ export default function AdminCourseNewPage() {
           });
           setLevelLabels(newLabels);
         })
-        .catch((err) => console.error('Translation fetch error:', err));
+        .catch(() => {});
     }
   }, [activeLangId]);
 

@@ -126,7 +126,6 @@ public sealed class AdminPartnersController : ControllerBase
         catch (Exception ex)
         {
             var msg = ex.InnerException?.Message ?? ex.Message;
-            System.Console.WriteLine("[AdminPartners Create] " + ex.ToString());
             return StatusCode(500, new { message = "Ortak eklenirken hata: " + msg });
         }
     }

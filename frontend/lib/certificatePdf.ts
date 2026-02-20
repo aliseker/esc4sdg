@@ -35,10 +35,7 @@ export function downloadCertificatePdf(options: {
     canvas.height = pdfH * scale;
     const ctx = canvas.getContext('2d');
 
-    if (!ctx) {
-      console.error('Canvas context failed');
-      return;
-    }
+    if (!ctx) return;
 
     // Clear canvas (transparent)
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -74,7 +71,6 @@ export function downloadCertificatePdf(options: {
   };
 
   img.onerror = () => {
-    console.error('Certificate background failed to load');
     doc.text('Certificate Generation Failed - Image not found', 10, 10);
     doc.save('error.pdf');
   };

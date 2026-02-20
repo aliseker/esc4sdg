@@ -180,10 +180,9 @@ public sealed class AuthController : ControllerBase
         {
             await _emailService.SendEmailAsync(user.Email, "Reset Password", body);
         }
-        catch (Exception ex)
+        catch
         {
-            // Log error but generally return success to user
-            Console.WriteLine($"Email sending failed: {ex.Message}");
+            // Email failed; still return success to user for security
         }
 
         return Ok(new { message = "If the email exists, a reset link has been sent." });
