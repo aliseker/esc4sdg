@@ -17,6 +17,11 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: t("siteTitle"),
     description: t("siteDescription"),
+    icons: {
+      icon: "/favicon.ico",
+      shortcut: "/favicon.ico",
+      apple: "/favicon.ico",
+    },
   };
 }
 
